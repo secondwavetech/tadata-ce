@@ -1,0 +1,31 @@
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Docker
+docker-compose.override.yml
+
+# Backup files
+*.tar.gz
+*.sql
+*.dump
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/

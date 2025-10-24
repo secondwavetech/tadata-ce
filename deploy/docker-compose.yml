@@ -1,0 +1,118 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: tadata-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-tadata}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - tadata-network
+
+  server:
+    image: ghcr.io/secondwave/tadata-server:${SERVER_IMAGE_TAG:-latest}
+    container_name: tadata-server
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: ${POSTGRES_TADATA_USER:-tadatauser}
+      DATABASE_PASSWORD: ${POSTGRES_TADATA_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB:-tadata}
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      FUNCTION_EXECUTOR_URL: http://function-executor:3002
+      FAAS_URL: http://faas:8080
+    ports:
+      - "${SERVER_PORT:-3001}:3001"
+    depends_on:
+      db:
+        condition: service_healthy
+      faas:
+        condition: service_started
+      function-executor:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - tadata-network
+
+  function-executor:
+    image: ghcr.io/secondwave/tadata-function-executor:${FUNCTION_EXECUTOR_IMAGE_TAG:-latest}
+    container_name: tadata-function-executor
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_USERNAME: ${POSTGRES_TADATA_USER:-tadatauser}
+      DATABASE_PASSWORD: ${POSTGRES_TADATA_PASSWORD}
+      DATABASE_NAME: ${POSTGRES_DB:-tadata}
+      JWT_SECRET: ${JWT_SECRET}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      FAAS_URL: http://faas:8080
+    ports:
+      - "${FUNCTION_EXECUTOR_PORT:-3002}:3002"
+    depends_on:
+      db:
+        condition: service_healthy
+      faas:
+        condition: service_started
+    volumes:
+      - functions-data:/app/functions
+    restart: unless-stopped
+    networks:
+      - tadata-network
+
+  faas:
+    image: ghcr.io/secondwave/tadata-faas:${FAAS_IMAGE_TAG:-latest}
+    container_name: tadata-faas
+    ports:
+      - "${FAAS_PORT:-8080}:8080"
+    volumes:
+      - functions-data:/functions
+    restart: unless-stopped
+    networks:
+      - tadata-network
+
+  client:
+    image: ghcr.io/secondwave/tadata-client:${CLIENT_IMAGE_TAG:-latest}
+    container_name: tadata-client
+    environment:
+      VITE_API_URL: http://localhost:${SERVER_PORT:-3001}
+    ports:
+      - "${CLIENT_PORT:-3000}:80"
+    depends_on:
+      - server
+    restart: unless-stopped
+    networks:
+      - tadata-network
+
+volumes:
+  postgres-data:
+    name: tadata-ce_postgres-data
+  functions-data:
+    name: tadata-ce_functions-data
+
+networks:
+  tadata-network:
+    name: tadata-network
+    driver: bridge
