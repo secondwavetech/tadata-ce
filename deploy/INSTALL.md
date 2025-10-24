@@ -44,7 +44,7 @@
 Run this single command to download and install tadata.ai:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/secondwave/tadata-ce/main/deploy/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash
 ```
 
 This will:
@@ -60,7 +60,7 @@ For more control over the installation:
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/secondwave/tadata-ce.git
+git clone https://github.com/secondwavetech/tadata-ce.git
 cd tadata-ce/deploy
 ```
 
@@ -299,7 +299,7 @@ curl http://localhost:3000
 **Check internet connection:**
 
 ```bash
-docker pull ghcr.io/secondwave/tadata-server:latest
+docker pull ghcr.io/secondwavetech/tadata-server:latest
 ```
 
 **Check Docker Hub/GHCR status:**
@@ -470,10 +470,10 @@ cd ~/tadata-ce/deploy
 docker-compose down -v
 
 # Remove images (optional)
-docker rmi ghcr.io/secondwave/tadata-client:latest
-docker rmi ghcr.io/secondwave/tadata-server:latest
-docker rmi ghcr.io/secondwave/tadata-faas:latest
-docker rmi ghcr.io/secondwave/tadata-function-executor:latest
+docker rmi ghcr.io/secondwavetech/tadata-client:latest
+docker rmi ghcr.io/secondwavetech/tadata-server:latest
+docker rmi ghcr.io/secondwavetech/tadata-faas:latest
+docker rmi ghcr.io/secondwavetech/tadata-function-executor:latest
 
 # Remove installation directory
 cd ~
@@ -499,8 +499,8 @@ Data volumes will remain and can be restored if you reinstall.
 
 ## Getting Help
 
-- **Documentation**: https://github.com/secondwave/tadata-ce
-- **Issues**: https://github.com/secondwave/tadata-ce/issues
-- **Discussions**: https://github.com/secondwave/tadata-ce/discussions
+- **Documentation**: https://github.com/secondwavetech/tadata-ce
+- **Issues**: https://github.com/secondwavetech/tadata-ce/issues
+- **Discussions**: https://github.com/secondwavetech/tadata-ce/discussions
 
 For production deployments or enterprise support, contact Second Wave.

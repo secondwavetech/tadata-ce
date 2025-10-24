@@ -26,14 +26,14 @@ tadata.ai CE is a complete AI-powered data analysis platform that runs on your l
 ### One-Line Install
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/secondwave/tadata-ce/main/deploy/install.sh | bash
+curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash
 ```
 
 ### Manual Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/secondwave/tadata-ce.git
+git clone https://github.com/secondwavetech/tadata-ce.git
 cd tadata-ce/deploy
 
 # Run interactive setup
@@ -92,8 +92,8 @@ docker run --rm -v tadata-ce_postgres-data:/data -v $(pwd):/backup \
 ## Support
 
 - 📖 [Installation Guide](deploy/INSTALL.md)
-- 🐛 [Issue Tracker](https://github.com/secondwave/tadata-ce/issues)
-- 💬 [Discussions](https://github.com/secondwave/tadata-ce/discussions)
+- 🐛 [Issue Tracker](https://github.com/secondwavetech/tadata-ce/issues)
+- 💬 [Discussions](https://github.com/secondwavetech/tadata-ce/discussions)
 
 ## License
 

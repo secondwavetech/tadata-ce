@@ -22,7 +22,7 @@ services:
       - tadata-network
 
   server:
-    image: ghcr.io/secondwave/tadata-server:${SERVER_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-server:${SERVER_IMAGE_TAG:-latest}
     container_name: tadata-server
     environment:
       NODE_ENV: production
@@ -56,7 +56,7 @@ services:
       - tadata-network
 
   function-executor:
-    image: ghcr.io/secondwave/tadata-function-executor:${FUNCTION_EXECUTOR_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-function-executor:${FUNCTION_EXECUTOR_IMAGE_TAG:-latest}
     container_name: tadata-function-executor
     environment:
       NODE_ENV: production
@@ -83,7 +83,7 @@ services:
       - tadata-network
 
   faas:
-    image: ghcr.io/secondwave/tadata-faas:${FAAS_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-faas:${FAAS_IMAGE_TAG:-latest}
     container_name: tadata-faas
     ports:
       - "${FAAS_PORT:-8080}:8080"
@@ -94,7 +94,7 @@ services:
       - tadata-network
 
   client:
-    image: ghcr.io/secondwave/tadata-client:${CLIENT_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-client:${CLIENT_IMAGE_TAG:-latest}
     container_name: tadata-client
     environment:
       VITE_API_URL: http://localhost:${SERVER_PORT:-3001}
