@@ -27,13 +27,24 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3001
+      EDITION_TYPE: ${EDITION_TYPE:-COMMUNITY}
+      AUTH_MODE: ${AUTH_MODE:-single-user}
       DATABASE_HOST: db
       DATABASE_PORT: 5432
       DATABASE_USERNAME: ${POSTGRES_TADATA_USER:-tadatauser}
       DATABASE_PASSWORD: ${POSTGRES_TADATA_PASSWORD}
       DATABASE_NAME: ${POSTGRES_DB:-tadata}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-tadata}
+      POSTGRES_TADATA_USER: ${POSTGRES_TADATA_USER:-tadatauser}
+      POSTGRES_TADATA_PASSWORD: ${POSTGRES_TADATA_PASSWORD}
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      INTERNAL_API_SECRET: ${INTERNAL_API_SECRET:-${JWT_SECRET}}
+      DOWNLOAD_TOKEN_SECRET: ${DOWNLOAD_TOKEN_SECRET:-${JWT_SECRET}}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       FUNCTION_EXECUTOR_URL: http://function-executor:3002
       FAAS_URL: http://faas:8080
@@ -54,6 +65,10 @@ services:
     restart: unless-stopped
     networks:
       - tadata-network
+    command: >
+      sh -c "npm run migration:run:prod &&
+             /database/scripts/init_tadata_user_docker.sh &&
+             npm run start:prod"
 
   function-executor:
     image: ghcr.io/secondwavetech/tadata-function-executor:${FUNCTION_EXECUTOR_IMAGE_TAG:-latest}
@@ -61,6 +76,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3002
+      EDITION_TYPE: ${EDITION_TYPE:-COMMUNITY}
       DATABASE_HOST: db
       DATABASE_PORT: 5432
       DATABASE_USERNAME: ${POSTGRES_TADATA_USER:-tadatauser}

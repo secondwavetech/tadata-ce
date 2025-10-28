@@ -8,6 +8,12 @@ JWT_SECRET=$(openssl rand -base64 32)
 # Encryption Key (32-byte hex)
 ENCRYPTION_KEY=$(openssl rand -hex 32)
 
+# Internal API Secret (32-byte base64)
+INTERNAL_API_SECRET=$(openssl rand -base64 32)
+
+# Download Token Secret (32-byte base64)
+DOWNLOAD_TOKEN_SECRET=$(openssl rand -base64 32)
+
 # PostgreSQL passwords
 POSTGRES_PASSWORD=$(openssl rand -base64 24)
 POSTGRES_TADATA_PASSWORD=$(openssl rand -base64 24)
@@ -16,6 +22,8 @@ POSTGRES_TADATA_PASSWORD=$(openssl rand -base64 24)
 cat > /tmp/tadata-secrets.env << EOF
 JWT_SECRET=$JWT_SECRET
 ENCRYPTION_KEY=$ENCRYPTION_KEY
+INTERNAL_API_SECRET=$INTERNAL_API_SECRET
+DOWNLOAD_TOKEN_SECRET=$DOWNLOAD_TOKEN_SECRET
 POSTGRES_PASSWORD=$POSTGRES_PASSWORD
 POSTGRES_TADATA_PASSWORD=$POSTGRES_TADATA_PASSWORD
 EOF

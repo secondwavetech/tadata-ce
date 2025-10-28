@@ -65,11 +65,15 @@ if [ ! -f .env ]; then
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s|JWT_SECRET=|JWT_SECRET=$JWT_SECRET|" .env
             sed -i '' "s|ENCRYPTION_KEY=|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env
+            sed -i '' "s|INTERNAL_API_SECRET=|INTERNAL_API_SECRET=$INTERNAL_API_SECRET|" .env
+            sed -i '' "s|DOWNLOAD_TOKEN_SECRET=|DOWNLOAD_TOKEN_SECRET=$DOWNLOAD_TOKEN_SECRET|" .env
             sed -i '' "s|POSTGRES_PASSWORD=|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|" .env
             sed -i '' "s|POSTGRES_TADATA_PASSWORD=|POSTGRES_TADATA_PASSWORD=$POSTGRES_TADATA_PASSWORD|" .env
         else
             sed -i "s|JWT_SECRET=|JWT_SECRET=$JWT_SECRET|" .env
             sed -i "s|ENCRYPTION_KEY=|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env
+            sed -i "s|INTERNAL_API_SECRET=|INTERNAL_API_SECRET=$INTERNAL_API_SECRET|" .env
+            sed -i "s|DOWNLOAD_TOKEN_SECRET=|DOWNLOAD_TOKEN_SECRET=$DOWNLOAD_TOKEN_SECRET|" .env
             sed -i "s|POSTGRES_PASSWORD=|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|" .env
             sed -i "s|POSTGRES_TADATA_PASSWORD=|POSTGRES_TADATA_PASSWORD=$POSTGRES_TADATA_PASSWORD|" .env
         fi
