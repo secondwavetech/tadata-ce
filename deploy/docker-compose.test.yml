@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  server:
+    image: local/tadata-server:test
+    
+  function-executor:
+    image: local/tadata-function-executor:test
+    
+  faas:
+    image: local/tadata-faas:test
+    
+  client:
+    image: local/tadata-client:test

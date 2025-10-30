@@ -10,8 +10,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-tadata}
     volumes:
       - postgres-data:/var/lib/postgresql/data
-    ports:
-      - "${DB_PORT:-5432}:5432"
+    # No external port - internal network only
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
       interval: 10s
@@ -26,9 +25,12 @@ services:
     container_name: tadata-server
     environment:
       NODE_ENV: production
-      PORT: 3001
+      SERVER_PORT: 3001
+      SERVER_BASE_URL: http://server:3001
       EDITION_TYPE: ${EDITION_TYPE:-COMMUNITY}
       AUTH_MODE: ${AUTH_MODE:-single-user}
+      AUTH_TYPE: ${AUTH_TYPE:-local}
+      PAYMENT_ENABLED: ${PAYMENT_ENABLED:-false}
       DATABASE_HOST: db
       DATABASE_PORT: 5432
       DATABASE_USERNAME: ${POSTGRES_TADATA_USER:-tadatauser}
@@ -47,9 +49,8 @@ services:
       DOWNLOAD_TOKEN_SECRET: ${DOWNLOAD_TOKEN_SECRET:-${JWT_SECRET}}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       FUNCTION_EXECUTOR_URL: http://function-executor:3002
-      FAAS_URL: http://faas:8080
-    ports:
-      - "${SERVER_PORT:-3001}:3001"
+      FAAS_URL: http://faas:3000
+    # No external port - accessed via client proxy only
     depends_on:
       db:
         condition: service_healthy
@@ -57,8 +58,11 @@ services:
         condition: service_started
       function-executor:
         condition: service_started
+    volumes:
+      - conversation-files:/var/tadata_data/conversation-files
+      - lancedb-data:/tadata/data/lancedb
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -84,9 +88,9 @@ services:
       DATABASE_NAME: ${POSTGRES_DB:-tadata}
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
-      FAAS_URL: http://faas:8080
-    ports:
-      - "${FUNCTION_EXECUTOR_PORT:-3002}:3002"
+      FAAS_PROVIDER: faas
+      FAAS_SERVER_URL: http://faas:3000
+    # No external port - internal network only
     depends_on:
       db:
         condition: service_healthy
@@ -101,10 +105,9 @@ services:
   faas:
     image: ghcr.io/secondwavetech/tadata-faas:${FAAS_IMAGE_TAG:-latest}
     container_name: tadata-faas
-    ports:
-      - "${FAAS_PORT:-8080}:8080"
+    # No external port - internal network only
     volumes:
-      - functions-data:/functions
+      - functions-data:/var/functions
     restart: unless-stopped
     networks:
       - tadata-network
@@ -113,7 +116,8 @@ services:
     image: ghcr.io/secondwavetech/tadata-client:${CLIENT_IMAGE_TAG:-latest}
     container_name: tadata-client
     environment:
-      VITE_API_URL: http://localhost:${SERVER_PORT:-3001}
+      # API proxy target (nginx will proxy /api/ requests to this URL)
+      API_URL: http://server:3001/api/
     ports:
       - "${CLIENT_PORT:-3000}:80"
     depends_on:
@@ -127,6 +131,10 @@ volumes:
     name: tadata-ce_postgres-data
   functions-data:
     name: tadata-ce_functions-data
+  conversation-files:
+    name: tadata-ce_conversation-files
+  lancedb-data:
+    name: tadata-ce_lancedb-data
 
 networks:
   tadata-network:
