@@ -29,6 +29,8 @@ tadata.ai CE is a complete AI-powered data analysis platform that runs on your l
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash
 ```
 
+This installs from the `main` branch, cloning the repo to `~/tadata-ce` and running an interactive setup (`deploy/setup.sh`). By default, Docker images are pulled with the `latest` tag unless overridden in `deploy/.env`.
+
 ### Manual Installation
 
 ```bash
@@ -59,6 +61,32 @@ All configuration is managed through environment variables. The setup script wil
 
 See [deploy/INSTALL.md](deploy/INSTALL.md) for detailed configuration options.
 
+### Image tags and pinning
+
+By default, application images use the `latest` tag:
+- `ghcr.io/secondwavetech/tadata-server:${SERVER_IMAGE_TAG:-latest}`
+- `ghcr.io/secondwavetech/tadata-client:${CLIENT_IMAGE_TAG:-latest}`
+- `ghcr.io/secondwavetech/tadata-faas:${FAAS_IMAGE_TAG:-latest}`
+- `ghcr.io/secondwavetech/tadata-function-executor:${FUNCTION_EXECUTOR_IMAGE_TAG:-latest}`
+- Database is fixed to `postgres:15-alpine`.
+
+To pin to a specific release, set tags in `deploy/.env`, for example:
+
+```bash
+SERVER_IMAGE_TAG=v1.2.0
+CLIENT_IMAGE_TAG=v1.2.0
+FAAS_IMAGE_TAG=v1.2.0
+FUNCTION_EXECUTOR_IMAGE_TAG=v1.2.0
+```
+
+Then apply:
+
+```bash
+cd tadata-ce/deploy
+docker-compose pull
+docker-compose up -d
+```
+
 ## Upgrading
 
 ```bash
@@ -66,6 +94,8 @@ cd tadata-ce/deploy
 docker-compose pull
 docker-compose up -d
 ```
+
+If you have set image tags in `deploy/.env`, the pull will fetch those specific versions. Without overrides, it will pull the latest images.
 
 ## Troubleshooting
 

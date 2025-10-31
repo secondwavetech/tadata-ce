@@ -53,6 +53,16 @@ This will:
 - Guide you through configuration
 - Start all services
 
+#### What the installer does
+
+The script fetches the `main` branch, then runs `deploy/setup.sh`, which:
+- Prompts for your Anthropic API key and optional client port (defaults to 3000)
+- Generates and injects secure secrets into `deploy/.env`
+- Detects an existing database volume (`tadata-ce_postgres-data`) and offers to remove it for a clean install
+- Pulls Docker images (defaults to `latest` tags)
+- Starts all services with `docker-compose up -d`
+- Verifies health checks and prints the access URL
+
 ### Manual Installation
 
 For more control over the installation:
@@ -143,6 +153,8 @@ SERVER_IMAGE_TAG=latest
 FAAS_IMAGE_TAG=latest
 FUNCTION_EXECUTOR_IMAGE_TAG=latest
 ```
+
+These variables are referenced by `deploy/docker-compose.yml` using `${VAR:-default}`. If unset, images default to `latest` and the database image is fixed to `postgres:15-alpine`.
 
 ### Port Conflicts
 
@@ -272,6 +284,24 @@ docker-compose ps
 
 All services should show "Up" status.
 
+### Ports and Network
+
+Default ports:
+- Client: `CLIENT_PORT` → 3000 by default
+- Server: 3001 (internal only)
+- Function Executor: 3002 (internal only)
+- FaaS: 3000 (internal only)
+- Postgres: 5432 (internal only)
+
+Docker network: `tadata-network`
+
+List volumes and network:
+
+```bash
+docker volume ls | grep tadata-ce
+docker network ls | grep tadata-network
+```
+
 ### Cannot Access http://localhost:3000
 
 **Check client container:**
@@ -312,6 +342,17 @@ In `.env`, specify a known working version:
 
 ```bash
 SERVER_IMAGE_TAG=v1.0.0
+```
+
+### Reset Database For A Clean Install
+
+If you want to start fresh, remove the existing database volume and restart:
+
+```bash
+cd ~/tadata-ce/deploy
+docker-compose down -v
+docker volume rm tadata-ce_postgres-data || true
+docker-compose up -d
 ```
 
 ### Memory or Performance Issues
