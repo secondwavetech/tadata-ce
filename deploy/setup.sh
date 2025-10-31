@@ -186,6 +186,7 @@ fi
 ln -sf scripts/logs.sh logs.sh
 ln -sf scripts/restart.sh restart.sh
 ln -sf scripts/stop.sh stop.sh
+ln -sf scripts/upgrade.sh upgrade.sh
 ln -sf scripts/uninstall.sh uninstall.sh
 
 # Show next steps
@@ -197,5 +198,6 @@ echo "Useful commands:"
 echo "  ./logs.sh            # View logs"
 echo "  ./stop.sh            # Stop services"
 echo "  ./restart.sh         # Restart services"
+echo "  ./upgrade.sh         # Upgrade to latest version"
 echo "  ./uninstall.sh       # Remove everything"
 echo ""
