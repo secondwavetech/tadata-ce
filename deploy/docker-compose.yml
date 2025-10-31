@@ -21,7 +21,7 @@ services:
       - tadata-network
 
   server:
-    image: ghcr.io/secondwavetech/tadata-server:${SERVER_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-ce/tadata-server:${SERVER_IMAGE_TAG:-latest}
     container_name: tadata-server
     environment:
       NODE_ENV: production
@@ -75,7 +75,7 @@ services:
              npm run start:prod"
 
   function-executor:
-    image: ghcr.io/secondwavetech/tadata-function-executor:${FUNCTION_EXECUTOR_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-ce/tadata-function-executor:${FUNCTION_EXECUTOR_IMAGE_TAG:-latest}
     container_name: tadata-function-executor
     environment:
       NODE_ENV: production
@@ -103,7 +103,7 @@ services:
       - tadata-network
 
   faas:
-    image: ghcr.io/secondwavetech/tadata-faas:${FAAS_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-ce/tadata-faas:${FAAS_IMAGE_TAG:-latest}
     container_name: tadata-faas
     # No external port - internal network only
     volumes:
@@ -113,7 +113,7 @@ services:
       - tadata-network
 
   client:
-    image: ghcr.io/secondwavetech/tadata-client:${CLIENT_IMAGE_TAG:-latest}
+    image: ghcr.io/secondwavetech/tadata-ce/tadata-client:${CLIENT_IMAGE_TAG:-latest}
     container_name: tadata-client
     environment:
       # API proxy target (nginx will proxy /api/ requests to this URL)
