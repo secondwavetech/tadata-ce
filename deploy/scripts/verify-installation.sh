@@ -10,11 +10,11 @@ echo "Verifying installation..."
 echo ""
 
 # Check if containers are running
-services=("tadata-db" "tadata-server" "tadata-faas" "tadata-function-executor" "tadata-client")
+services=("db" "server" "faas" "function-executor" "client")
 all_running=true
 
 for service in "${services[@]}"; do
-    if docker ps --format '{{.Names}}' | grep -q "^${service}$"; then
+    if docker-compose ps --services --filter "status=running" | grep -q "^${service}$"; then
         echo -e "${GREEN}✓${NC} $service is running"
     else
         echo -e "${RED}✗${NC} $service is not running"

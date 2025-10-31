@@ -64,16 +64,44 @@ if [ ! -f .env ]; then
         client_port="${client_port:-3000}"
     fi
     
+    # Allow pre-setting DATA_DIR via environment
+    if [ -n "$DATA_DIR" ]; then
+        data_dir="$DATA_DIR"
+        echo "Using DATA_DIR=$data_dir from environment"
+    else
+        default_data_dir="$SCRIPT_DIR/data"
+        read -p "Data directory [$default_data_dir]: " data_dir
+        data_dir="${data_dir:-$default_data_dir}"
+    fi
+    
+    # Expand ~ to home directory if present
+    data_dir="${data_dir/#\~/$HOME}"
+    
+    # Convert to absolute path
+    if [[ ! "$data_dir" = /* ]]; then
+        data_dir="$SCRIPT_DIR/$data_dir"
+    fi
+    
+    # Create data directory if it doesn't exist
+    if [ ! -d "$data_dir" ]; then
+        mkdir -p "$data_dir"
+        echo -e "${GREEN}✓ Created data directory: $data_dir${NC}"
+    else
+        echo -e "${YELLOW}Using existing data directory: $data_dir${NC}"
+    fi
+    
     # Create .env from template
     cp .env.template .env
     
-    # Set API key and port
+    # Set API key, port, and data directory
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' "s|ANTHROPIC_API_KEY=|ANTHROPIC_API_KEY=$anthropic_key|" .env
         sed -i '' "s|CLIENT_PORT=3000|CLIENT_PORT=$client_port|" .env
+        sed -i '' "s|DATA_DIR=|DATA_DIR=$data_dir|" .env
     else
         sed -i "s|ANTHROPIC_API_KEY=|ANTHROPIC_API_KEY=$anthropic_key|" .env
         sed -i "s|CLIENT_PORT=3000|CLIENT_PORT=$client_port|" .env
+        sed -i "s|DATA_DIR=|DATA_DIR=$data_dir|" .env
     fi
     
     # Load generated secrets from temporary file
@@ -104,14 +132,15 @@ echo -e "${GREEN}✓ Configuration complete${NC}\n"
 
 # Database handling
 echo -e "${BLUE}[4/6] Database configuration...${NC}"
-EXISTING_VOLUMES=$(docker volume ls --format "{{.Name}}" | grep -E "^tadata-ce_postgres-data$" || true)
-if [ -n "$EXISTING_VOLUMES" ]; then
-    echo -e "${YELLOW}⚠ Existing database volume detected: $EXISTING_VOLUMES${NC}"
+DATA_DIR=$(grep "^DATA_DIR=" .env | cut -d '=' -f2)
+if [ -d "$DATA_DIR/postgres" ] && [ "$(ls -A "$DATA_DIR/postgres" 2>/dev/null)" ]; then
+    echo -e "${YELLOW}⚠ Existing database detected in $DATA_DIR/postgres${NC}"
     read -p "Remove existing database for a clean install? (y/N): " db_choice
     if [[ $db_choice =~ ^[Yy]$ ]]; then
-        echo -e "${YELLOW}Removing existing database volumes...${NC}"
-        docker-compose down -v 2>/dev/null || true
-        echo -e "${GREEN}✓ Database volumes removed${NC}"
+        echo -e "${YELLOW}Removing existing database...${NC}"
+        docker-compose down 2>/dev/null || true
+        rm -rf "$DATA_DIR/postgres"
+        echo -e "${GREEN}✓ Database removed${NC}"
     else
         echo -e "${YELLOW}Keeping existing database${NC}"
     fi
@@ -136,7 +165,7 @@ MAX_WAIT=90
 ELAPSED=0
 SUCCESS=false
 while [ $ELAPSED -lt $MAX_WAIT ]; do
-  if docker ps --filter "name=tadata-server" --filter "health=healthy" | grep -q tadata-server; then
+  if docker-compose ps server | grep -q "healthy\|Up"; then
     SUCCESS=true
     break
   fi

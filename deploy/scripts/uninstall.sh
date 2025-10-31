@@ -24,10 +24,20 @@ if [ -f "docker-compose.local.yml" ]; then
   COMPOSE_FILES="$COMPOSE_FILES -f docker-compose.local.yml"
 fi
 
+# Get data directory from .env if it exists
+DATA_DIR=""
+if [ -f .env ]; then
+  DATA_DIR=$(grep "^DATA_DIR=" .env | cut -d '=' -f2 || true)
+fi
+
 echo -e "${RED}⚠️  WARNING: This will permanently delete:${NC}"
 echo "  • All tadata containers"
-echo "  • All database data"
-echo "  • All function data"
+if [ -n "$DATA_DIR" ] && [ -d "$DATA_DIR" ]; then
+  echo "  • All data in: $DATA_DIR"
+else
+  echo "  • All database data"
+  echo "  • All function data"
+fi
 echo ""
 
 docker-compose $COMPOSE_FILES ps || true
@@ -42,10 +52,17 @@ fi
 echo -e "${YELLOW}Stopping and removing containers...${NC}"
 docker-compose $COMPOSE_FILES down
 
-echo -e "${YELLOW}Removing volumes...${NC}"
-docker-compose $COMPOSE_FILES down -v
+if [ -n "$DATA_DIR" ] && [ -d "$DATA_DIR" ]; then
+  echo -e "${YELLOW}Removing data directory...${NC}"
+  rm -rf "$DATA_DIR"
+  echo -e "${GREEN}✓ Data directory removed${NC}"
+else
+  echo -e "${YELLOW}Removing volumes...${NC}"
+  docker-compose $COMPOSE_FILES down -v
+  echo -e "${GREEN}✓ Volumes removed${NC}"
+fi
 
-echo -e "${GREEN}✓ Containers and volumes removed${NC}"
+echo -e "${GREEN}✓ Containers removed${NC}"
 
 echo ""
 read -p "Remove installation directory '$INSTALL_DIR'? (y/N): " REMOVE
