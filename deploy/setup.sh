@@ -41,15 +41,28 @@ if [ ! -f .env ]; then
     echo "Please provide your Anthropic API key."
     echo "Get one at: https://console.anthropic.com/"
     echo ""
-    read -p "Anthropic API Key: " anthropic_key
+
+    # Allow providing ANTHROPIC_API_KEY via environment for non-interactive installs
+    if [ -n "$ANTHROPIC_API_KEY" ]; then
+        anthropic_key="$ANTHROPIC_API_KEY"
+        echo "Using ANTHROPIC_API_KEY from environment"
+    else
+        read -p "Anthropic API Key: " anthropic_key
+    fi
     
     if [ -z "$anthropic_key" ]; then
         echo -e "${RED}✗ API key is required${NC}"
         exit 1
     fi
 
-    read -p "Frontend port [3000]: " client_port
-    client_port="${client_port:-3000}"
+    # Allow pre-setting CLIENT_PORT via environment
+    if [ -n "$CLIENT_PORT" ]; then
+        client_port="$CLIENT_PORT"
+        echo "Using CLIENT_PORT=$client_port from environment"
+    else
+        read -p "Frontend port [3000]: " client_port
+        client_port="${client_port:-3000}"
+    fi
     
     # Create .env from template
     cp .env.template .env
