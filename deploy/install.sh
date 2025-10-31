@@ -8,7 +8,8 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 REPO_URL="https://github.com/secondwavetech/tadata-ce.git"
-INSTALL_DIR="${HOME}/tadata-ce"
+# Install into the current directory by default; allow optional target dir arg
+INSTALL_DIR="${1:-$PWD}"
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   tadata.ai Community Edition Installer   ║${NC}"
@@ -29,23 +30,35 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Clone repository
-echo -e "${BLUE}Downloading tadata.ai...${NC}"
-if [ -d "$INSTALL_DIR" ]; then
-    echo -e "${RED}✗ Directory $INSTALL_DIR already exists${NC}"
-    read -p "Remove existing directory and continue? (y/N): " remove
-    if [[ ! $remove =~ ^[Yy]$ ]]; then
-        echo "Installation cancelled."
-        exit 1
+# Prepare installation directory
+if [ ! -d "$INSTALL_DIR" ]; then
+    mkdir -p "$INSTALL_DIR"
+else
+    # If directory is not empty, confirm
+    if [ "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
+        echo -e "${YELLOW}Directory $INSTALL_DIR is not empty.${NC}"
+        read -p "Continue and potentially overwrite files? (y/N): " cont
+        if [[ ! $cont =~ ^[Yy]$ ]]; then
+            echo "Installation cancelled."
+            exit 1
+        fi
     fi
-    rm -rf "$INSTALL_DIR"
 fi
 
-git clone "$REPO_URL" "$INSTALL_DIR"
-echo -e "${GREEN}✓ Downloaded${NC}\n"
+# Clone to a temporary directory, then copy only the deploy assets
+TMP_DIR=$(mktemp -d)
+echo -e "${BLUE}Downloading tadata.ai...${NC}"
+git clone "$REPO_URL" "$TMP_DIR" >/dev/null
+cp -R "$TMP_DIR/deploy/." "$INSTALL_DIR/"
+rm -rf "$TMP_DIR"
+echo -e "${GREEN}✓ Downloaded${NC}\\n"
 
-# Change to deploy directory
-cd "$INSTALL_DIR/deploy"
+# Make sure scripts are executable
+chmod +x "$INSTALL_DIR"/setup.sh || true
+chmod +x "$INSTALL_DIR"/scripts/*.sh || true
+
+# Change to installation directory
+cd "$INSTALL_DIR"
 
 # Run setup
 # If this script is invoked via curl | bash, stdin is a pipe and interactive prompts won't work.
