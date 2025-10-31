@@ -48,6 +48,12 @@ echo -e "${GREEN}✓ Downloaded${NC}\n"
 cd "$INSTALL_DIR/deploy"
 
 # Run setup
+# If this script is invoked via curl | bash, stdin is a pipe and interactive prompts won't work.
+# Reattach stdin to the user's TTY so setup.sh can read input interactively.
+if [ ! -t 0 ] && [ -e /dev/tty ]; then
+  exec </dev/tty
+fi
+
 echo -e "${BLUE}Starting setup...${NC}\n"
 ./setup.sh
 
