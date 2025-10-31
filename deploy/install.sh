@@ -4,6 +4,7 @@ set -e
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
@@ -61,14 +62,14 @@ chmod +x "$INSTALL_DIR"/scripts/*.sh || true
 cd "$INSTALL_DIR"
 
 # Run setup
-# If this script is invoked via curl | bash, stdin is a pipe and interactive prompts won't work.
-# Reattach stdin to the user's TTY so setup.sh can read input interactively.
+# If invoked via curl | bash, stdin is a pipe; explicitly feed setup.sh from the TTY.
 if [ ! -t 0 ] && [ -e /dev/tty ]; then
-  exec </dev/tty
+  echo -e "${BLUE}Starting setup...${NC}\n"
+  bash ./setup.sh </dev/tty
+else
+  echo -e "${BLUE}Starting setup...${NC}\n"
+  ./setup.sh
 fi
-
-echo -e "${BLUE}Starting setup...${NC}\n"
-./setup.sh
 
 echo ""
 echo -e "${GREEN}Installation directory: ${NC}$INSTALL_DIR"
