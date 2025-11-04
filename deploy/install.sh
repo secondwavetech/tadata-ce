@@ -9,8 +9,27 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 REPO_URL="https://github.com/secondwavetech/tadata-ce.git"
-# Install into the current directory by default; allow optional target dir arg
-INSTALL_DIR="${1:-$PWD}"
+
+# Parse arguments
+VERSION="latest"
+INSTALL_DIR="$PWD"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --version)
+      VERSION="$2"
+      shift 2
+      ;;
+    --version=*)
+      VERSION="${1#*=}"
+      shift
+      ;;
+    *)
+      INSTALL_DIR="$1"
+      shift
+      ;;
+  esac
+done
 
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   tadata.ai Community Edition Installer   ║${NC}"
@@ -49,10 +68,11 @@ fi
 # Clone to a temporary directory, then copy only the deploy assets
 TMP_DIR=$(mktemp -d)
 echo -e "${BLUE}Downloading tadata.ai...${NC}"
-git clone "$REPO_URL" "$TMP_DIR" >/dev/null
+git clone "$REPO_URL" "$TMP_DIR" >/dev/null 2>&1
 cp -R "$TMP_DIR/deploy/." "$INSTALL_DIR/"
 rm -rf "$TMP_DIR"
-echo -e "${GREEN}✓ Downloaded${NC}\\n"
+echo -e "${GREEN}✓ Downloaded${NC}"
+echo ""
 
 # Make sure scripts are executable
 chmod +x "$INSTALL_DIR"/setup.sh || true
@@ -64,12 +84,11 @@ cd "$INSTALL_DIR"
 # Run setup
 # If invoked via curl | bash, stdin is a pipe; explicitly feed setup.sh from the TTY.
 if [ ! -t 0 ] && [ -e /dev/tty ]; then
-  echo -e "${BLUE}Starting setup...${NC}\n"
-  bash ./setup.sh </dev/tty
+  bash ./setup.sh --version="$VERSION" </dev/tty
 else
-  echo -e "${BLUE}Starting setup...${NC}\n"
-  ./setup.sh
+  ./setup.sh --version="$VERSION"
 fi
 
 echo ""
 echo -e "${GREEN}Installation directory: ${NC}$INSTALL_DIR"
+echo ""

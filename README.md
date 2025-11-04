@@ -29,7 +29,17 @@ tadata.ai CE is a complete AI-powered data analysis platform that runs on your l
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash
 ```
 
-This installs from the `main` branch, cloning the repo to `~/tadata-ce` and running an interactive setup (`deploy/setup.sh`). By default, Docker images are pulled with the `latest` tag unless overridden in `deploy/.env`.
+Or install a specific version:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --version=v1.2.3
+```
+
+This will:
+- Download the installer from the `main` branch
+- Guide you through interactive setup (API key, port, data directory)
+- Pull Docker images (default: `latest` or specified version)
+- Start all services
 
 ### Manual Installation
 
@@ -38,8 +48,8 @@ This installs from the `main` branch, cloning the repo to `~/tadata-ce` and runn
 git clone https://github.com/secondwavetech/tadata-ce.git
 cd tadata-ce/deploy
 
-# Run interactive setup
-./setup.sh
+# Run interactive setup (optionally pin version)
+./setup.sh --version=v1.2.3
 
 # Access the application
 open http://localhost:3000
@@ -89,27 +99,52 @@ docker-compose up -d
 
 ## Upgrading
 
+### Using the upgrade script (recommended)
+
+```bash
+cd tadata-ce/deploy
+
+# Upgrade to latest
+./upgrade.sh
+
+# Or upgrade to specific version
+./upgrade.sh --version=v1.2.3
+```
+
+The upgrade script will:
+1. Backup your database to `${DATA_DIR}/backups/`
+2. Pull new images
+3. Stop services
+4. Start with new images (migrations run automatically)
+5. Provide rollback instructions if needed
+
+### Manual upgrade
+
 ```bash
 cd tadata-ce/deploy
 docker-compose pull
 docker-compose up -d
 ```
 
-If you have set image tags in `deploy/.env`, the pull will fetch those specific versions. Without overrides, it will pull the latest images.
-
 ## Troubleshooting
 
 See the [Installation Guide](deploy/INSTALL.md#troubleshooting) for common issues and solutions.
 
-## Data Backup
+## Data Storage
 
-Your data is stored in Docker volumes. To back up:
+By default, data is stored in `${DATA_DIR}` (configurable during install, defaults to `./data`):
+- `${DATA_DIR}/postgres` - Database files
+- `${DATA_DIR}/functions` - Custom functions
+- `${DATA_DIR}/conversation-files` - Conversation data
+- `${DATA_DIR}/lancedb` - Vector database
+- `${DATA_DIR}/backups` - Automatic upgrade backups
+
+### Manual Backup
 
 ```bash
 cd tadata-ce/deploy
-docker-compose down
-docker run --rm -v tadata-ce_postgres-data:/data -v $(pwd):/backup \
-  ubuntu tar czf /backup/tadata-backup.tar.gz /data
+source .env
+tar czf tadata-backup-$(date +%Y%m%d).tar.gz "$DATA_DIR"
 ```
 
 ## Security

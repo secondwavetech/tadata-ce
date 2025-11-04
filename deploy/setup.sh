@@ -10,6 +10,24 @@ NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Parse arguments
+VERSION="latest"
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --version)
+      VERSION="$2"
+      shift 2
+      ;;
+    --version=*)
+      VERSION="${1#*=}"
+      shift
+      ;;
+    *)
+      shift
+      ;;
+  esac
+done
+
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   tadata.ai Community Edition Setup       ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
@@ -18,15 +36,17 @@ echo ""
 # Check prerequisites
 echo -e "${BLUE}[1/5] Checking prerequisites...${NC}"
 ./scripts/check-prerequisites.sh || exit 1
-echo -e "${GREEN}✓ Prerequisites met${NC}\n"
+echo -e "${GREEN}✓ Prerequisites met${NC}"
+echo ""
 
 # Generate secrets
 echo -e "${BLUE}[2/5] Generating secure secrets...${NC}"
 ./scripts/generate-secrets.sh
-echo -e "${GREEN}✓ Secrets generated${NC}\n"
+echo -e "${GREEN}✓ Secrets generated${NC}"
+echo ""
 
-# Get Anthropic API Key and Port
-echo -e "${BLUE}[3/6] Configuration${NC}"
+# Configuration (without API key)
+echo -e "${BLUE}[3/5] Configuration${NC}"
 if [ -f .env ]; then
     echo -e "${YELLOW}⚠ .env file already exists${NC}"
     read -p "Overwrite existing configuration? (y/N): " overwrite
@@ -38,23 +58,6 @@ if [ -f .env ]; then
 fi
 
 if [ ! -f .env ]; then
-    echo "Please provide your Anthropic API key."
-    echo "Get one at: https://console.anthropic.com/"
-    echo ""
-
-    # Allow providing ANTHROPIC_API_KEY via environment for non-interactive installs
-    if [ -n "$ANTHROPIC_API_KEY" ]; then
-        anthropic_key="$ANTHROPIC_API_KEY"
-        echo "Using ANTHROPIC_API_KEY from environment"
-    else
-        read -p "Anthropic API Key: " anthropic_key
-    fi
-    
-    if [ -z "$anthropic_key" ]; then
-        echo -e "${RED}✗ API key is required${NC}"
-        exit 1
-    fi
-
     # Allow pre-setting CLIENT_PORT via environment
     if [ -n "$CLIENT_PORT" ]; then
         client_port="$CLIENT_PORT"
@@ -63,7 +66,7 @@ if [ ! -f .env ]; then
         read -p "Frontend port [3000]: " client_port
         client_port="${client_port:-3000}"
     fi
-    
+
     # Allow pre-setting DATA_DIR via environment
     if [ -n "$DATA_DIR" ]; then
         data_dir="$DATA_DIR"
@@ -73,15 +76,15 @@ if [ ! -f .env ]; then
         read -p "Data directory [$default_data_dir]: " data_dir
         data_dir="${data_dir:-$default_data_dir}"
     fi
-    
+
     # Expand ~ to home directory if present
     data_dir="${data_dir/#\~/$HOME}"
-    
+
     # Convert to absolute path
     if [[ ! "$data_dir" = /* ]]; then
         data_dir="$SCRIPT_DIR/$data_dir"
     fi
-    
+
     # Create data directory if it doesn't exist
     if [ ! -d "$data_dir" ]; then
         mkdir -p "$data_dir"
@@ -89,25 +92,33 @@ if [ ! -f .env ]; then
     else
         echo -e "${YELLOW}Using existing data directory: $data_dir${NC}"
     fi
-    
+
     # Create .env from template
     cp .env.template .env
-    
-    # Set API key, port, and data directory
+
+    # Note: We intentionally skip ANTHROPIC_API_KEY - users will configure AI during first login
+
+    # Set port, data directory, and version tags
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s|ANTHROPIC_API_KEY=|ANTHROPIC_API_KEY=$anthropic_key|" .env
         sed -i '' "s|CLIENT_PORT=3000|CLIENT_PORT=$client_port|" .env
-        sed -i '' "s|DATA_DIR=|DATA_DIR=$data_dir|" .env
+        sed -i '' "s|^DATA_DIR=.*|DATA_DIR=$data_dir|" .env
+        sed -i '' "s|CLIENT_IMAGE_TAG=latest|CLIENT_IMAGE_TAG=$VERSION|" .env
+        sed -i '' "s|SERVER_IMAGE_TAG=latest|SERVER_IMAGE_TAG=$VERSION|" .env
+        sed -i '' "s|FAAS_IMAGE_TAG=latest|FAAS_IMAGE_TAG=$VERSION|" .env
+        sed -i '' "s|FUNCTION_EXECUTOR_IMAGE_TAG=latest|FUNCTION_EXECUTOR_IMAGE_TAG=$VERSION|" .env
     else
-        sed -i "s|ANTHROPIC_API_KEY=|ANTHROPIC_API_KEY=$anthropic_key|" .env
         sed -i "s|CLIENT_PORT=3000|CLIENT_PORT=$client_port|" .env
-        sed -i "s|DATA_DIR=|DATA_DIR=$data_dir|" .env
+        sed -i "s|^DATA_DIR=.*|DATA_DIR=$data_dir|" .env
+        sed -i "s|CLIENT_IMAGE_TAG=latest|CLIENT_IMAGE_TAG=$VERSION|" .env
+        sed -i "s|SERVER_IMAGE_TAG=latest|SERVER_IMAGE_TAG=$VERSION|" .env
+        sed -i "s|FAAS_IMAGE_TAG=latest|FAAS_IMAGE_TAG=$VERSION|" .env
+        sed -i "s|FUNCTION_EXECUTOR_IMAGE_TAG=latest|FUNCTION_EXECUTOR_IMAGE_TAG=$VERSION|" .env
     fi
-    
+
     # Load generated secrets from temporary file
     if [ -f /tmp/tadata-secrets.env ]; then
         source /tmp/tadata-secrets.env
-        
+
         if [[ "$OSTYPE" == "darwin"* ]]; then
             sed -i '' "s|JWT_SECRET=|JWT_SECRET=$JWT_SECRET|" .env
             sed -i '' "s|ENCRYPTION_KEY=|ENCRYPTION_KEY=$ENCRYPTION_KEY|" .env
@@ -123,15 +134,16 @@ if [ ! -f .env ]; then
             sed -i "s|POSTGRES_PASSWORD=|POSTGRES_PASSWORD=$POSTGRES_PASSWORD|" .env
             sed -i "s|POSTGRES_TADATA_PASSWORD=|POSTGRES_TADATA_PASSWORD=$POSTGRES_TADATA_PASSWORD|" .env
         fi
-        
+
         rm /tmp/tadata-secrets.env
     fi
 fi
 
-echo -e "${GREEN}✓ Configuration complete${NC}\n"
+echo -e "${GREEN}✓ Configuration complete${NC}"
+echo ""
 
 # Database handling
-echo -e "${BLUE}[4/6] Database configuration...${NC}"
+echo -e "${BLUE}[4/5] Database configuration...${NC}"
 DATA_DIR=$(grep "^DATA_DIR=" .env | cut -d '=' -f2)
 if [ -d "$DATA_DIR/postgres" ] && [ "$(ls -A "$DATA_DIR/postgres" 2>/dev/null)" ]; then
     echo -e "${YELLOW}⚠ Existing database detected in $DATA_DIR/postgres${NC}"
@@ -151,13 +163,9 @@ fi
 echo ""
 
 # Pull images
-echo -e "${BLUE}[5/6] Pulling Docker images...${NC}"
+echo -e "${BLUE}[5/5] Starting services...${NC}"
 docker-compose pull || true
-
-echo -e "${GREEN}✓ Images ready${NC}\n"
-
-# Start services
-echo -e "${BLUE}[6/6] Starting services...${NC}"
+echo -e "${BLUE}Starting containers...${NC}"
 docker-compose up -d
 
 echo -e "${BLUE}Monitoring server startup...${NC}"
@@ -193,6 +201,14 @@ ln -sf scripts/uninstall.sh uninstall.sh
 CLIENT_PORT=$(grep "^CLIENT_PORT=" .env | cut -d '=' -f2)
 CLIENT_PORT="${CLIENT_PORT:-3000}"
 echo -e "Access tadata.ai at: ${BLUE}http://localhost:${CLIENT_PORT}${NC}"
+echo ""
+echo -e "${YELLOW}Next Steps:${NC}"
+echo "  1. Sign up for your account (first user)"
+echo "  2. After login, configure your AI settings:"
+echo "     • Go to Organization Settings → System LLM tab"
+echo "     • Select your LLM service (Claude, OpenAI, Gemini, or AWS Bedrock)"
+echo "     • Enter your API key"
+echo "     • Save configuration"
 echo ""
 echo "Useful commands:"
 echo "  ./logs.sh            # View logs"

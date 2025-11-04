@@ -9,7 +9,26 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
-INSTALL_DIR="${1:-$(pwd)}"
+# Parse arguments
+VERSION=""
+INSTALL_DIR="$(pwd)"
+
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --version)
+      VERSION="$2"
+      shift 2
+      ;;
+    --version=*)
+      VERSION="${1#*=}"
+      shift
+      ;;
+    *)
+      INSTALL_DIR="$1"
+      shift
+      ;;
+  esac
+done
 
 if [ ! -f "$INSTALL_DIR/docker-compose.yml" ]; then
   echo -e "${RED}✗ No tadata installation found in: $INSTALL_DIR${NC}"
@@ -41,9 +60,29 @@ fi
 
 source .env
 
+# Update version tags in .env if specified
+if [ -n "$VERSION" ]; then
+  echo -e "${BLUE}Setting version to: $VERSION${NC}"
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    sed -i '' "s|CLIENT_IMAGE_TAG=.*|CLIENT_IMAGE_TAG=$VERSION|" .env
+    sed -i '' "s|SERVER_IMAGE_TAG=.*|SERVER_IMAGE_TAG=$VERSION|" .env
+    sed -i '' "s|FAAS_IMAGE_TAG=.*|FAAS_IMAGE_TAG=$VERSION|" .env
+    sed -i '' "s|FUNCTION_EXECUTOR_IMAGE_TAG=.*|FUNCTION_EXECUTOR_IMAGE_TAG=$VERSION|" .env
+  else
+    sed -i "s|CLIENT_IMAGE_TAG=.*|CLIENT_IMAGE_TAG=$VERSION|" .env
+    sed -i "s|SERVER_IMAGE_TAG=.*|SERVER_IMAGE_TAG=$VERSION|" .env
+    sed -i "s|FAAS_IMAGE_TAG=.*|FAAS_IMAGE_TAG=$VERSION|" .env
+    sed -i "s|FUNCTION_EXECUTOR_IMAGE_TAG=.*|FUNCTION_EXECUTOR_IMAGE_TAG=$VERSION|" .env
+  fi
+  echo ""
+else
+  echo -e "${BLUE}Upgrading to version: ${SERVER_IMAGE_TAG:-latest}${NC}"
+  echo ""
+fi
+
 echo -e "${YELLOW}⚠  This will:${NC}"
 echo "  • Backup current database"
-echo "  • Pull latest Docker images"
+echo "  • Pull Docker images"
 echo "  • Stop running services"
 echo "  • Start services with new images"
 echo "  • Run database migrations"
