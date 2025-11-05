@@ -21,7 +21,8 @@ tadata.ai CE is a complete AI-powered data analysis platform that runs on your l
 - Docker Compose V2
 - 4GB RAM minimum
 - 10GB disk space
-- Anthropic API key ([get one here](https://console.anthropic.com/))
+
+**Note**: You'll need an AI provider API key (Claude, OpenAI, Gemini, or AWS Bedrock) to use the platform, but this can be configured through the web UI after installation.
 
 ### One-Line Install
 
