@@ -57,7 +57,25 @@ echo -e "${BLUE}╔════════════════════�
 echo -e "${BLUE}║   tadata.ai Community Edition Installer   ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
 echo ""
-echo -e "${BLUE}Installation directory:${NC} $INSTALL_DIR"
+
+# Confirm installation directory (only when invoked via pipe, as we have TTY access)
+if [ ! -t 0 ] && [ -e /dev/tty ]; then
+  read -p "Installation directory [$INSTALL_DIR]: " custom_dir </dev/tty
+else
+  read -p "Installation directory [$INSTALL_DIR]: " custom_dir
+fi
+
+if [ -n "$custom_dir" ]; then
+  INSTALL_DIR="$custom_dir"
+  # Expand ~ to home directory if present
+  INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+  # Convert to absolute path
+  if [[ ! "$INSTALL_DIR" = /* ]]; then
+    INSTALL_DIR="$PWD/$INSTALL_DIR"
+  fi
+fi
+
+echo -e "${BLUE}Installing to:${NC} $INSTALL_DIR"
 echo ""
 
 # Check if git is installed
@@ -74,24 +92,21 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Prepare installation directory
+# Check if directory exists and is not empty - abort if so
+if [ -d "$INSTALL_DIR" ] && [ "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
+    echo -e "${RED}✗ Installation directory is not empty: $INSTALL_DIR${NC}"
+    echo ""
+    echo "Please remove the directory manually or choose a different location."
+    echo ""
+    exit 1
+fi
+
+# Create installation directory if it doesn't exist
 if [ ! -d "$INSTALL_DIR" ]; then
     echo -e "${BLUE}Creating installation directory...${NC}"
     mkdir -p "$INSTALL_DIR"
     echo -e "${GREEN}✓ Directory created${NC}"
     echo ""
-else
-    # If directory is not empty, confirm
-    if [ "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
-        echo -e "${YELLOW}⚠ Directory $INSTALL_DIR is not empty.${NC}"
-        read -p "Continue and potentially overwrite files? (y/N): " cont
-        if [[ ! $cont =~ ^[Yy]$ ]]; then
-            echo -e "${YELLOW}Installation cancelled.${NC}"
-            echo -e "To install in a different directory, use: ${BLUE}--dir=/path/to/directory${NC}"
-            exit 1
-        fi
-        echo ""
-    fi
 fi
 
 # Clone to a temporary directory, then copy only the deploy assets
