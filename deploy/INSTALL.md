@@ -52,10 +52,12 @@ Run this single command to download and install tadata.ai:
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash
 ```
 
+This will install tadata.ai to `~/tadata-ce` by default.
+
 **Install to custom directory:**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- /path/to/install
+curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install
 ```
 
 **Install specific version:**
@@ -64,8 +66,14 @@ curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --version=v1.2.3
 ```
 
+**Combine options:**
+
+```bash
+curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install --version=v1.2.3
+```
+
 This will:
-- Clone the repository to the specified directory (default: current directory)
+- Clone the repository to the specified directory (default: `~/tadata-ce`)
 - Check prerequisites
 - Guide you through configuration (port, data directory)
 - Pull images (specified version or `latest`)

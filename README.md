@@ -29,6 +29,14 @@ tadata.ai CE is a complete AI-powered data analysis platform that runs on your l
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash
 ```
 
+This installs to `~/tadata-ce` by default.
+
+Or install to a custom directory:
+
+```bash
+curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install
+```
+
 Or install a specific version:
 
 ```bash
@@ -36,7 +44,7 @@ curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy
 ```
 
 This will:
-- Download the installer from the `main` branch
+- Download the installer from the `main` branch to `~/tadata-ce` (or custom directory via `--dir`)
 - Guide you through interactive setup (API key, port, data directory)
 - Pull Docker images (default: `latest` or specified version)
 - Start all services

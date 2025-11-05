@@ -12,7 +12,7 @@ REPO_URL="https://github.com/secondwavetech/tadata-ce.git"
 
 # Parse arguments
 VERSION="latest"
-INSTALL_DIR="$PWD"
+INSTALL_DIR=""
 
 while [[ $# -gt 0 ]]; do
   case $1 in
@@ -24,16 +24,40 @@ while [[ $# -gt 0 ]]; do
       VERSION="${1#*=}"
       shift
       ;;
-    *)
-      INSTALL_DIR="$1"
+    --dir)
+      INSTALL_DIR="$2"
+      shift 2
+      ;;
+    --dir=*)
+      INSTALL_DIR="${1#*=}"
       shift
+      ;;
+    *)
+      echo -e "${RED}Unknown argument: $1${NC}"
+      echo "Usage: $0 [--version=VERSION] [--dir=DIRECTORY]"
+      exit 1
       ;;
   esac
 done
 
+# Default to ~/tadata-ce if no directory specified
+if [ -z "$INSTALL_DIR" ]; then
+  INSTALL_DIR="$HOME/tadata-ce"
+fi
+
+# Expand ~ to home directory if present
+INSTALL_DIR="${INSTALL_DIR/#\~/$HOME}"
+
+# Convert to absolute path
+if [[ ! "$INSTALL_DIR" = /* ]]; then
+  INSTALL_DIR="$PWD/$INSTALL_DIR"
+fi
+
 echo -e "${BLUE}╔════════════════════════════════════════════╗${NC}"
 echo -e "${BLUE}║   tadata.ai Community Edition Installer   ║${NC}"
 echo -e "${BLUE}╚════════════════════════════════════════════╝${NC}"
+echo ""
+echo -e "${BLUE}Installation directory:${NC} $INSTALL_DIR"
 echo ""
 
 # Check if git is installed
@@ -52,16 +76,21 @@ fi
 
 # Prepare installation directory
 if [ ! -d "$INSTALL_DIR" ]; then
+    echo -e "${BLUE}Creating installation directory...${NC}"
     mkdir -p "$INSTALL_DIR"
+    echo -e "${GREEN}✓ Directory created${NC}"
+    echo ""
 else
     # If directory is not empty, confirm
     if [ "$(ls -A "$INSTALL_DIR" 2>/dev/null)" ]; then
-        echo -e "${YELLOW}Directory $INSTALL_DIR is not empty.${NC}"
+        echo -e "${YELLOW}⚠ Directory $INSTALL_DIR is not empty.${NC}"
         read -p "Continue and potentially overwrite files? (y/N): " cont
         if [[ ! $cont =~ ^[Yy]$ ]]; then
-            echo "Installation cancelled."
+            echo -e "${YELLOW}Installation cancelled.${NC}"
+            echo -e "To install in a different directory, use: ${BLUE}--dir=/path/to/directory${NC}"
             exit 1
         fi
+        echo ""
     fi
 fi
 
