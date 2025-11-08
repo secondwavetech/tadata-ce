@@ -48,6 +48,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       FUNCTION_EXECUTOR_URL: http://function-executor:3002
       FAAS_URL: http://faas:3000
+      TOOL_TIMEOUT: ${TOOL_TIMEOUT:-600000}
     # No external port - accessed via client proxy only
     depends_on:
       db:
@@ -60,7 +61,7 @@ services:
       - ${DATA_DIR}/conversation-files:/var/tadata_data/conversation-files
       - ${DATA_DIR}/lancedb:/tadata/data/lancedb
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001/_/swagger"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -87,6 +88,7 @@ services:
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
       FAAS_PROVIDER: faas
       FAAS_SERVER_URL: http://faas:3000
+      FAAS_SERVER_TIMEOUT: ${FAAS_SERVER_TIMEOUT:-600000}
     # No external port - internal network only
     depends_on:
       db:
@@ -101,6 +103,9 @@ services:
 
   faas:
     image: ghcr.io/secondwavetech/tadata-ce/tadata-faas:${FAAS_IMAGE_TAG:-latest}
+    environment:
+      MAX_FUNCTION_TIMEOUT: ${MAX_FUNCTION_TIMEOUT:-600000}
+      DEFAULT_FUNCTION_TIMEOUT: ${DEFAULT_FUNCTION_TIMEOUT:-600000}
     # No external port - internal network only
     volumes:
       - ${DATA_DIR}/functions:/var/functions
@@ -112,7 +117,7 @@ services:
     image: ghcr.io/secondwavetech/tadata-ce/tadata-client:${CLIENT_IMAGE_TAG:-latest}
     environment:
       # API proxy target (nginx will proxy /api/ requests to this URL)
-      API_URL: http://server:3001/api/
+      API_URL: http://server:3001
     ports:
       - "${CLIENT_PORT:-3000}:80"
     depends_on:
