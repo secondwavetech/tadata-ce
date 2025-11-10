@@ -19,7 +19,7 @@
 
 ### Minimum Requirements
 
-- **Operating System**: macOS 10.15+, Ubuntu 20.04+, Windows 10/11 with WSL2
+- **Operating System**: macOS 10.15+, Ubuntu 20.04+, Windows 10/11 (native PowerShell or WSL2)
 - **Docker**: Docker Desktop 20.10+ or Docker Engine 20.10+
 - **Docker Compose**: V2 (included with Docker Desktop)
 - **RAM**: 4GB minimum, 8GB recommended
@@ -46,6 +46,8 @@
 
 ### Quick Install
 
+#### macOS / Linux / WSL
+
 Run this single command to download and install tadata.ai:
 
 ```bash
@@ -54,22 +56,44 @@ curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy
 
 This will install tadata.ai to `~/tadata-ce` by default.
 
+#### Windows (PowerShell)
+
+Run this command in PowerShell:
+
+```powershell
+iex (irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1)
+```
+
+This will install tadata.ai to `%USERPROFILE%\tadata-ce` by default.
+
 **Install to custom directory:**
 
 ```bash
+# macOS / Linux / WSL
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install
+
+# Windows (PowerShell)
+iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -InstallDir 'C:\path\to\install'"
 ```
 
 **Install specific version:**
 
 ```bash
+# macOS / Linux / WSL
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --version=v1.2.3
+
+# Windows (PowerShell)
+iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -Version 'v1.2.3'"
 ```
 
 **Combine options:**
 
 ```bash
+# macOS / Linux / WSL
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install --version=v1.2.3
+
+# Windows (PowerShell)
+iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -InstallDir 'C:\path\to\install' -Version 'v1.2.3'"
 ```
 
 This will:
@@ -107,6 +131,8 @@ The script fetches the `main` branch, then runs `deploy/setup.sh`, which:
 
 For more control over the installation:
 
+#### macOS / Linux / WSL
+
 1. **Clone the repository**
 
 ```bash
@@ -127,6 +153,24 @@ cd tadata-ce/deploy
 
 # Or with specific version
 ./setup.sh --version=v1.2.3
+```
+
+#### Windows (PowerShell)
+
+1. **Clone the repository**
+
+```powershell
+git clone https://github.com/secondwavetech/tadata-ce.git
+cd tadata-ce\deploy
+```
+
+2. **Run setup script**
+
+```powershell
+.\setup.ps1
+
+# Or with specific version
+.\setup.ps1 -Version v1.2.3
 ```
 
 This will:

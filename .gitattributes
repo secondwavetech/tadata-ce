@@ -1,0 +1,8 @@
+# Ensure bash scripts always use LF line endings, even on Windows
+*.sh text eol=lf
+
+# Ensure PowerShell scripts use CRLF on Windows
+*.ps1 text eol=crlf
+
+# Default for other text files
+* text=auto
