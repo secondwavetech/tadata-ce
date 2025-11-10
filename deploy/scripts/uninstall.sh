@@ -10,6 +10,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Detect Docker Compose command (V2 preferred, V1 fallback)
+if docker compose version &> /dev/null; then
+  DOCKER_COMPOSE=(docker compose)
+elif command -v docker-compose &> /dev/null; then
+  DOCKER_COMPOSE=(docker-compose)
+else
+  echo -e "${RED}✗ Docker Compose is not available${NC}" >&2
+  exit 1
+fi
+
 INSTALL_DIR="${1:-$(pwd)}"
 
 if [ ! -f "$INSTALL_DIR/docker-compose.yml" ]; then
@@ -40,7 +50,7 @@ else
 fi
 echo ""
 
-docker-compose $COMPOSE_FILES ps || true
+"${DOCKER_COMPOSE[@]}" $COMPOSE_FILES ps || true
 
 echo ""
 read -p "Type 'yes' to confirm uninstall: " CONFIRM
@@ -50,7 +60,7 @@ if [ "$CONFIRM" != "yes" ]; then
 fi
 
 echo -e "${YELLOW}Stopping and removing containers...${NC}"
-docker-compose $COMPOSE_FILES down
+"${DOCKER_COMPOSE[@]}" $COMPOSE_FILES down
 
 if [ -n "$DATA_DIR" ] && [ -d "$DATA_DIR" ]; then
   echo -e "${YELLOW}Removing data directory...${NC}"
@@ -58,7 +68,7 @@ if [ -n "$DATA_DIR" ] && [ -d "$DATA_DIR" ]; then
   echo -e "${GREEN}✓ Data directory removed${NC}"
 else
   echo -e "${YELLOW}Removing volumes...${NC}"
-  docker-compose $COMPOSE_FILES down -v
+  "${DOCKER_COMPOSE[@]}" $COMPOSE_FILES down -v
   echo -e "${GREEN}✓ Volumes removed${NC}"
 fi
 

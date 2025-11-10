@@ -12,9 +12,47 @@ $ErrorActionPreference = "Stop"
 function Write-Color {
     param(
         [string]$Text,
-        [string]$Color = "White"
+        [string]$Color = "White",
+        [switch]$NoNewline
     )
-    Write-Host $Text -ForegroundColor $Color
+    if ($NoNewline) {
+        Write-Host $Text -ForegroundColor $Color -NoNewline
+    } else {
+        Write-Host $Text -ForegroundColor $Color
+    }
+}
+
+# Docker Compose command detection (V2 preferred, V1 fallback)
+function Get-DockerComposeCommand {
+    # Try docker compose (V2) first
+    $v2Result = & docker compose version 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        return @("docker", "compose")
+    }
+
+    # Fall back to docker-compose (V1)
+    if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
+        return @("docker-compose")
+    }
+
+    return $null
+}
+
+# Helper to run docker-compose commands
+function Invoke-DockerCompose {
+    param(
+        [Parameter(ValueFromRemainingArguments=$true)]
+        [string[]]$Arguments
+    )
+
+    $composeCmd = Get-DockerComposeCommand
+    if (-not $composeCmd) {
+        Write-Color "✗ Docker Compose is not available" "Red"
+        exit 1
+    }
+
+    $prefix = if ($composeCmd.Length -gt 1) { $composeCmd[1..($composeCmd.Length-1)] } else { @() }
+    & $composeCmd[0] @prefix @Arguments
 }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -34,10 +72,12 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     exit 1
 }
 
-# Check docker-compose
-if (-not (Get-Command docker-compose -ErrorAction SilentlyContinue)) {
-    Write-Color "✗ docker-compose is not installed" "Red"
+# Check Docker Compose (V2 or V1)
+$composeCmd = Get-DockerComposeCommand
+if (-not $composeCmd) {
+    Write-Color "✗ Docker Compose is not installed" "Red"
     Write-Host "Please install Docker Compose"
+    Write-Host "Modern Docker Desktop includes Docker Compose V2 by default"
     exit 1
 }
 
@@ -163,7 +203,7 @@ if ((Test-Path $postgresPath) -and ((Get-ChildItem $postgresPath -ErrorAction Si
     $dbChoice = Read-Host "Remove existing database for a clean install? (y/N)"
     if ($dbChoice -match '^[Yy]$') {
         Write-Color "Removing existing database..." "Yellow"
-        docker-compose -f "$scriptDir\docker-compose.yml" down 2>$null
+        Invoke-DockerCompose -f "$scriptDir\docker-compose.yml" down 2>$null
         Remove-Item -Recurse -Force $postgresPath -ErrorAction SilentlyContinue
         Write-Color "✓ Database removed" "Green"
     } else {
@@ -178,9 +218,9 @@ Write-Host ""
 # [5/5] Start services
 Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
-docker-compose pull 2>$null
+Invoke-DockerCompose pull 2>$null
 Write-Color "Starting containers..." "Cyan"
-docker-compose up -d
+Invoke-DockerCompose up -d
 
 Write-Color "Monitoring server startup..." "Cyan"
 $maxWait = 90
@@ -188,7 +228,7 @@ $elapsed = 0
 $success = $false
 
 while ($elapsed -lt $maxWait) {
-    $status = docker-compose ps server 2>$null | Select-String -Pattern "healthy|Up"
+    $status = Invoke-DockerCompose ps server 2>$null | Select-String -Pattern "healthy|Up"
     if ($status) {
         $success = $true
         break

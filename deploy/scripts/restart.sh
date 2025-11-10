@@ -9,6 +9,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Detect Docker Compose command (V2 preferred, V1 fallback)
+if docker compose version &> /dev/null; then
+  DOCKER_COMPOSE=(docker compose)
+elif command -v docker-compose &> /dev/null; then
+  DOCKER_COMPOSE=(docker-compose)
+else
+  echo -e "${RED}✗ Docker Compose is not available${NC}" >&2
+  exit 1
+fi
+
 INSTALL_DIR="${1:-$(pwd)}"
 
 if [ ! -f "$INSTALL_DIR/docker-compose.yml" ]; then
@@ -24,7 +34,7 @@ if [ -f "docker-compose.local.yml" ]; then
 fi
 
 echo -e "${BLUE}Restarting services...${NC}"
-docker-compose $COMPOSE_FILES restart
+"${DOCKER_COMPOSE[@]}" $COMPOSE_FILES restart
 
 echo -e "${GREEN}✓ Services restarted${NC}"
 

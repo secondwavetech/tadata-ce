@@ -9,6 +9,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Detect Docker Compose command (V2 preferred, V1 fallback)
+if docker compose version &> /dev/null; then
+  DOCKER_COMPOSE=(docker compose)
+elif command -v docker-compose &> /dev/null; then
+  DOCKER_COMPOSE=(docker-compose)
+else
+  echo -e "${RED}✗ Docker Compose is not available${NC}" >&2
+  exit 1
+fi
+
 # Parse arguments
 VERSION=""
 INSTALL_DIR="$(pwd)"
@@ -49,7 +59,7 @@ echo ""
 
 # Show current versions
 echo -e "${BLUE}Current versions:${NC}"
-docker-compose $COMPOSE_FILES ps --format "table {{.Service}}\t{{.Image}}" 2>/dev/null || true
+"${DOCKER_COMPOSE[@]}" $COMPOSE_FILES ps --format "table {{.Service}}\t{{.Image}}" 2>/dev/null || true
 echo ""
 
 # Load environment variables
@@ -105,7 +115,7 @@ mkdir -p "$BACKUP_DIR"
 BACKUP_FILE="$BACKUP_DIR/tadata_backup_$(date +%Y%m%d_%H%M%S).sql"
 
 # Perform backup using pg_dump via docker exec
-if docker-compose $COMPOSE_FILES exec -T db pg_dump -U "${POSTGRES_USER:-postgres}" "${POSTGRES_DB:-tadata}" > "$BACKUP_FILE" 2>/dev/null; then
+if "${DOCKER_COMPOSE[@]}" $COMPOSE_FILES exec -T db pg_dump -U "${POSTGRES_USER:-postgres}" "${POSTGRES_DB:-tadata}" > "$BACKUP_FILE" 2>/dev/null; then
   echo -e "${GREEN}✓ Database backed up to: $BACKUP_FILE${NC}"
   echo -e "${YELLOW}  To rollback: psql -U postgres -d tadata < $BACKUP_FILE${NC}"
 else
@@ -119,15 +129,15 @@ fi
 
 echo ""
 echo -e "${BLUE}[2/5] Pulling latest images...${NC}"
-docker-compose $COMPOSE_FILES pull
+"${DOCKER_COMPOSE[@]}" $COMPOSE_FILES pull
 
 echo ""
 echo -e "${BLUE}[3/5] Stopping services...${NC}"
-docker-compose $COMPOSE_FILES stop
+"${DOCKER_COMPOSE[@]}" $COMPOSE_FILES stop
 
 echo ""
 echo -e "${BLUE}[4/5] Starting services with new images...${NC}"
-docker-compose $COMPOSE_FILES up -d
+"${DOCKER_COMPOSE[@]}" $COMPOSE_FILES up -d
 
 echo ""
 echo -e "${BLUE}[5/5] Waiting for services to be healthy...${NC}"
@@ -135,7 +145,7 @@ MAX_WAIT=90
 ELAPSED=0
 SUCCESS=false
 while [ $ELAPSED -lt $MAX_WAIT ]; do
-  if docker-compose $COMPOSE_FILES ps server | grep -q "healthy\|Up"; then
+  if "${DOCKER_COMPOSE[@]}" $COMPOSE_FILES ps server | grep -q "healthy\|Up"; then
     SUCCESS=true
     break
   fi
@@ -152,7 +162,7 @@ if [ "$SUCCESS" = true ]; then
   # Show new versions
   echo ""
   echo -e "${BLUE}New versions:${NC}"
-  docker-compose $COMPOSE_FILES ps --format "table {{.Service}}\t{{.Image}}"
+  "${DOCKER_COMPOSE[@]}" $COMPOSE_FILES ps --format "table {{.Service}}\t{{.Image}}"
   
   # Show access URL
   CLIENT_PORT=3000
@@ -172,14 +182,14 @@ if [ "$SUCCESS" = true ]; then
 else
   echo ""
   echo -e "${YELLOW}⚠  Services started but health checks are still initializing${NC}"
-  echo "Check status with: docker-compose $COMPOSE_FILES ps"
+  echo "Check status with: ${DOCKER_COMPOSE[@]} $COMPOSE_FILES ps"
   echo "View logs with: ./logs.sh"
-  
+
   if [ -n "$BACKUP_FILE" ] && [ -f "$BACKUP_FILE" ]; then
     echo ""
     echo -e "${YELLOW}To rollback, run:${NC}"
-    echo "  docker-compose $COMPOSE_FILES stop"
-    echo "  docker-compose $COMPOSE_FILES exec -T db psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-tadata} < $BACKUP_FILE"
-    echo "  docker-compose $COMPOSE_FILES up -d"
+    echo "  ${DOCKER_COMPOSE[@]} $COMPOSE_FILES stop"
+    echo "  ${DOCKER_COMPOSE[@]} $COMPOSE_FILES exec -T db psql -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-tadata} < $BACKUP_FILE"
+    echo "  ${DOCKER_COMPOSE[@]} $COMPOSE_FILES up -d"
   fi
 fi

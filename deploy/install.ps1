@@ -13,9 +13,14 @@ $ErrorActionPreference = "Stop"
 function Write-Color {
     param(
         [string]$Text,
-        [string]$Color = "White"
+        [string]$Color = "White",
+        [switch]$NoNewline
     )
-    Write-Host $Text -ForegroundColor $Color
+    if ($NoNewline) {
+        Write-Host $Text -ForegroundColor $Color -NoNewline
+    } else {
+        Write-Host $Text -ForegroundColor $Color
+    }
 }
 
 $REPO_URL = "https://github.com/secondwavetech/tadata-ce.git"

@@ -10,6 +10,16 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
 
+# Detect Docker Compose command (V2 preferred, V1 fallback)
+if docker compose version &> /dev/null; then
+  DOCKER_COMPOSE=(docker compose)
+elif command -v docker-compose &> /dev/null; then
+  DOCKER_COMPOSE=(docker-compose)
+else
+  echo -e "${RED}✗ Docker Compose is not available${NC}" >&2
+  exit 1
+fi
+
 # Determine installation directory (default: current directory)
 if [ -n "$2" ]; then
   INSTALL_DIR="$2"
@@ -43,12 +53,12 @@ if [ -n "$1" ] && [ "$1" != "$INSTALL_DIR" ]; then
   esac
 fi
 
-echo -e "${BLUE}tadata CE - Logs${NC}\nDirectory: $INSTALL_DIR" 
+echo -e "${BLUE}tadata CE - Logs${NC}\nDirectory: $INSTALL_DIR"
 [ -n "$SERVICE" ] && echo "Service: $SERVICE"
 echo -e "${YELLOW}Press Ctrl+C to exit${NC}\n"
 
 if [ -n "$SERVICE" ]; then
-  docker-compose $COMPOSE_FILES logs -f --tail=200 "$SERVICE"
+  "${DOCKER_COMPOSE[@]}" $COMPOSE_FILES logs -f --tail=200 "$SERVICE"
 else
-  docker-compose $COMPOSE_FILES logs -f --tail=200
+  "${DOCKER_COMPOSE[@]}" $COMPOSE_FILES logs -f --tail=200
 fi
