@@ -26,22 +26,38 @@ tadata.ai CE is a complete AI-powered data analysis platform that runs on your l
 
 ### One-Line Install
 
+**macOS / Linux / WSL:**
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash
 ```
 
-This installs to `~/tadata-ce` by default.
+**Windows (PowerShell):**
 
-Or install to a custom directory:
-
-```bash
-curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install
+```powershell
+iex (irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1)
 ```
 
-Or install a specific version:
+This installs to `~/tadata-ce` (or `%USERPROFILE%\tadata-ce` on Windows) by default.
+
+**Custom directory:**
 
 ```bash
+# macOS / Linux / WSL
+curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install
+
+# Windows (PowerShell)
+iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -InstallDir 'C:\path\to\install'"
+```
+
+**Specific version:**
+
+```bash
+# macOS / Linux / WSL
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --version=v1.2.3
+
+# Windows (PowerShell)
+iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -Version 'v1.2.3'"
 ```
 
 This will:
@@ -51,6 +67,8 @@ This will:
 - Start all services
 
 ### Manual Installation
+
+**macOS / Linux / WSL:**
 
 ```bash
 # Clone the repository
@@ -62,6 +80,20 @@ cd tadata-ce/deploy
 
 # Access the application
 open http://localhost:3000
+```
+
+**Windows (PowerShell):**
+
+```powershell
+# Clone the repository
+git clone https://github.com/secondwavetech/tadata-ce.git
+cd tadata-ce\deploy
+
+# Run interactive setup (optionally pin version)
+.\setup.ps1 -Version v1.2.3
+
+# Access the application
+start http://localhost:3000
 ```
 
 ## Architecture
