@@ -59,8 +59,19 @@ function Invoke-DockerCompose {
         exit 1
     }
 
-    $prefix = if ($composeCmd.Length -gt 1) { $composeCmd[1..($composeCmd.Length-1)] } else { @() }
-    & $composeCmd[0] @prefix @Arguments
+    # Build the complete command array
+    $cmdArray = @()
+    foreach ($cmd in $composeCmd) {
+        $cmdArray += $cmd
+    }
+    foreach ($arg in $Arguments) {
+        $cmdArray += $arg
+    }
+
+    # Invoke with proper error handling
+    $cmd = $cmdArray[0]
+    $params = $cmdArray[1..($cmdArray.Length-1)]
+    & $cmd $params
 }
 
 # Determine installation directory
@@ -130,8 +141,16 @@ Write-Host ""
 $remove = Read-Host "Remove installation directory '$InstallDir'? (y/N)"
 if ($remove -match '^[Yy]$') {
     Pop-Location
-    Remove-Item -Recurse -Force $InstallDir
-    Write-Color "✓ Installation directory removed" "Green"
+    # Move to a safe directory to avoid "in use" errors
+    Set-Location $env:TEMP
+    Start-Sleep -Seconds 1  # Brief pause to ensure all handles are released
+    try {
+        Remove-Item -Recurse -Force $InstallDir -ErrorAction Stop
+        Write-Color "✓ Installation directory removed" "Green"
+    } catch {
+        Write-Color "✗ Could not remove installation directory: $_" "Red"
+        Write-Color "You may need to close all programs and manually delete: $InstallDir" "Yellow"
+    }
 } else {
     Pop-Location
     Write-Color "Installation directory preserved" "Blue"
