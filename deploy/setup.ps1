@@ -1,10 +1,26 @@
 #!/usr/bin/env pwsh
 # tadata.ai Community Edition Setup Script for Windows
-# Requires PowerShell 5.1 or later
+# Requires PowerShell 7.0 or later
 
 param(
     [string]$Version = "latest"
 )
+
+# Check PowerShell version
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host ""
+    Write-Host "ERROR: PowerShell 7.0 or later is required" -ForegroundColor Red
+    Write-Host ""
+    Write-Host "You are running PowerShell $($PSVersionTable.PSVersion)" -ForegroundColor Yellow
+    Write-Host ""
+    Write-Host "Please install PowerShell 7.x from:" -ForegroundColor Cyan
+    Write-Host "  https://aka.ms/powershell-release?tag=stable" -ForegroundColor White
+    Write-Host ""
+    Write-Host "PowerShell 7 installs alongside Windows PowerShell 5.x (won't replace it)" -ForegroundColor Gray
+    Write-Host "After installation, run this script again using 'pwsh' instead of 'powershell'" -ForegroundColor Gray
+    Write-Host ""
+    exit 1
+}
 
 $ErrorActionPreference = "Continue"
 

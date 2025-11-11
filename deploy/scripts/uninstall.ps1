@@ -1,10 +1,18 @@
 #!/usr/bin/env pwsh
 # Uninstall Community Edition
 # Removes containers and volumes; optionally remove installation directory
+# Requires PowerShell 7.0 or later
 
 param(
     [string]$InstallDir = ""
 )
+
+# Check PowerShell version
+if ($PSVersionTable.PSVersion.Major -lt 7) {
+    Write-Host "ERROR: PowerShell 7.0 or later is required" -ForegroundColor Red
+    Write-Host "Download from: https://aka.ms/powershell-release?tag=stable" -ForegroundColor Cyan
+    exit 1
+}
 
 $ErrorActionPreference = "Continue"
 

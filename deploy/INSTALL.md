@@ -19,19 +19,26 @@
 
 ### Minimum Requirements
 
-- **Operating System**: macOS 10.15+, Ubuntu 20.04+, Windows 10/11 (native PowerShell or WSL2)
+- **Operating System**: macOS 10.15+, Ubuntu 20.04+, Windows 10/11 (PowerShell 7.0+ or WSL2)
 - **Docker**: Docker Desktop 20.10+ or Docker Engine 20.10+
 - **Docker Compose**: V2 (included with Docker Desktop)
 - **RAM**: 4GB minimum, 8GB recommended
 - **Disk Space**: 10GB minimum for images and data
 - **CPU**: 2 cores minimum, 4+ recommended
+- **Windows**: PowerShell 7.0 or later required for native installation
 
 ### Prerequisites
 
 1. **Docker Desktop** (macOS/Windows) or **Docker Engine** (Linux)
    - Download: https://www.docker.com/products/docker-desktop
 
-2. **AI Provider API Key** (optional - can be configured after installation)
+2. **PowerShell 7.0+** (Windows only - for native installation)
+   - Download: https://aka.ms/powershell-release?tag=stable
+   - **Important**: PowerShell 7.x installs alongside Windows PowerShell 5.x (doesn't replace it)
+   - After installation, use `pwsh` command instead of `powershell`
+   - **Alternative**: Use WSL2 with the bash installer if you prefer not to install PowerShell 7
+
+3. **AI Provider API Key** (optional - can be configured after installation)
    - You can configure AI settings through the web UI after first login
    - Supports: Claude (Anthropic), OpenAI, Google Gemini, or AWS Bedrock
    - To get an API key:
@@ -56,15 +63,27 @@ curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy
 
 This will install tadata.ai to `~/tadata-ce` by default.
 
-#### Windows (PowerShell)
+#### Windows (PowerShell 7+)
 
-Run this command in PowerShell:
+**First, ensure you have PowerShell 7.0 or later:**
 
 ```powershell
-iex (irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1)
+# Check your PowerShell version
+$PSVersionTable.PSVersion
+
+# If less than 7.0, download and install from:
+# https://aka.ms/powershell-release?tag=stable
+```
+
+**Then run the installer:**
+
+```powershell
+pwsh -Command "iex (irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1)"
 ```
 
 This will install tadata.ai to `%USERPROFILE%\tadata-ce` by default.
+
+**Note**: If you don't want to install PowerShell 7, you can use WSL2 with the bash installer instead.
 
 **Install to custom directory:**
 
@@ -72,8 +91,8 @@ This will install tadata.ai to `%USERPROFILE%\tadata-ce` by default.
 # macOS / Linux / WSL
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install
 
-# Windows (PowerShell)
-iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -InstallDir 'C:\path\to\install'"
+# Windows (PowerShell 7+)
+pwsh -Command "& { `$(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -InstallDir 'C:\path\to\install'"
 ```
 
 **Install specific version:**
@@ -82,8 +101,8 @@ iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/d
 # macOS / Linux / WSL
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --version=v1.2.3
 
-# Windows (PowerShell)
-iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -Version 'v1.2.3'"
+# Windows (PowerShell 7+)
+pwsh -Command "& { `$(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -Version 'v1.2.3'"
 ```
 
 **Combine options:**
@@ -92,8 +111,8 @@ iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/d
 # macOS / Linux / WSL
 curl -sSL https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.sh | bash -s -- --dir=/path/to/install --version=v1.2.3
 
-# Windows (PowerShell)
-iex "& { $(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -InstallDir 'C:\path\to\install' -Version 'v1.2.3'"
+# Windows (PowerShell 7+)
+pwsh -Command "& { `$(irm https://raw.githubusercontent.com/secondwavetech/tadata-ce/main/deploy/install.ps1) } -InstallDir 'C:\path\to\install' -Version 'v1.2.3'"
 ```
 
 This will:
@@ -155,7 +174,7 @@ cd tadata-ce/deploy
 ./setup.sh --version=v1.2.3
 ```
 
-#### Windows (PowerShell)
+#### Windows (PowerShell 7+)
 
 1. **Clone the repository**
 
@@ -167,10 +186,10 @@ cd tadata-ce\deploy
 2. **Run setup script**
 
 ```powershell
-.\setup.ps1
+pwsh .\setup.ps1
 
 # Or with specific version
-.\setup.ps1 -Version v1.2.3
+pwsh .\setup.ps1 -Version v1.2.3
 ```
 
 This will:
