@@ -197,7 +197,9 @@ if (-not (Test-Path "$scriptDir\.env")) {
 
     # Replace values
     $envContent = $envContent -replace 'CLIENT_PORT=3000', "CLIENT_PORT=$clientPort"
-    $envContent = $envContent -replace '^DATA_DIR=.*', "DATA_DIR=$dataDir"
+    # Use multiline mode (?m) and escape the path for Windows backslashes
+    $escapedDataDir = [regex]::Escape($dataDir)
+    $envContent = $envContent -replace '(?m)^DATA_DIR=.*$', "DATA_DIR=$dataDir"
     $envContent = $envContent -replace 'CLIENT_IMAGE_TAG=latest', "CLIENT_IMAGE_TAG=$Version"
     $envContent = $envContent -replace 'SERVER_IMAGE_TAG=latest', "SERVER_IMAGE_TAG=$Version"
     $envContent = $envContent -replace 'FAAS_IMAGE_TAG=latest', "FAAS_IMAGE_TAG=$Version"
