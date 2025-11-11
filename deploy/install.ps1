@@ -7,7 +7,8 @@ param(
     [string]$InstallDir = ""
 )
 
-$ErrorActionPreference = "Continue"
+# Set error handling - Stop on errors but allow specific operations to continue
+$ErrorActionPreference = "Stop"
 
 # Colors for output
 function Write-Color {
@@ -25,14 +26,22 @@ function Write-Color {
 
 $REPO_URL = "https://github.com/secondwavetech/tadata-ce.git"
 
+# Get current directory safely
+$currentDir = try { Get-Location | Select-Object -ExpandProperty Path } catch { $env:USERPROFILE }
+
 # Default to ~/tadata-ce if no directory specified
 if ([string]::IsNullOrWhiteSpace($InstallDir)) {
     $InstallDir = Join-Path $env:USERPROFILE "tadata-ce"
 }
 
 # Convert to absolute path
-if (-not [System.IO.Path]::IsPathRooted($InstallDir)) {
-    $InstallDir = Join-Path $PWD $InstallDir
+try {
+    if (-not [System.IO.Path]::IsPathRooted($InstallDir)) {
+        $InstallDir = Join-Path $currentDir $InstallDir
+    }
+} catch {
+    # If path operations fail, default to user profile
+    $InstallDir = Join-Path $env:USERPROFILE "tadata-ce"
 }
 
 Write-Color "╔════════════════════════════════════════════╗" "Cyan"
@@ -45,8 +54,13 @@ $customDir = Read-Host "Installation directory [$InstallDir]"
 if (-not [string]::IsNullOrWhiteSpace($customDir)) {
     $InstallDir = $customDir
     # Convert to absolute path
-    if (-not [System.IO.Path]::IsPathRooted($InstallDir)) {
-        $InstallDir = Join-Path $PWD $InstallDir
+    try {
+        if (-not [System.IO.Path]::IsPathRooted($InstallDir)) {
+            $InstallDir = Join-Path $currentDir $InstallDir
+        }
+    } catch {
+        # If path validation fails, use as-is
+        Write-Host "Warning: Using path as-is" -ForegroundColor Yellow
     }
 }
 
