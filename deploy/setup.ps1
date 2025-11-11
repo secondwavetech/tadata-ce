@@ -257,9 +257,9 @@ Write-Host ""
 # [5/5] Start services
 Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
-Invoke-DockerCompose pull 2>$null
+Invoke-DockerCompose pull 2>&1 | Out-Null
 Write-Color "Starting containers..." "Cyan"
-Invoke-DockerCompose up -d
+Invoke-DockerCompose up -d 2>&1 | Out-Null
 
 Write-Color "Monitoring server startup..." "Cyan"
 $maxWait = 90
@@ -285,6 +285,27 @@ if ($success) {
     Write-Color "Services started, but health checks may still be initializing." "Yellow"
 }
 
+# Create convenience wrapper scripts in root directory
+$wrapperScripts = @{
+    "logs.ps1" = "scripts\logs.ps1"
+    "restart.ps1" = "scripts\restart.ps1"
+    "stop.ps1" = "scripts\stop.ps1"
+    "upgrade.ps1" = "scripts\upgrade.ps1"
+    "uninstall.ps1" = "scripts\uninstall.ps1"
+}
+
+foreach ($wrapper in $wrapperScripts.GetEnumerator()) {
+    $wrapperPath = Join-Path $scriptDir $wrapper.Key
+    $targetScript = $wrapper.Value
+    $wrapperContent = @"
+#!/usr/bin/env pwsh
+# Convenience wrapper for $targetScript
+`$scriptDir = Split-Path -Parent `$MyInvocation.MyCommand.Path
+& "`$scriptDir\$targetScript" @args
+"@
+    Set-Content -Path $wrapperPath -Value $wrapperContent -NoNewline
+}
+
 # Show next steps
 $envVars = Get-Content "$scriptDir\.env" | Where-Object { $_ -match '^CLIENT_PORT=' }
 $clientPort = if ($envVars) { ($envVars -split '=', 2)[1] } else { "3000" }
@@ -302,8 +323,8 @@ Write-Host "     • Enter your API key"
 Write-Host "     • Save configuration"
 Write-Host ""
 Write-Host "Useful commands:"
-Write-Host "  .\scripts\logs.ps1         # View logs"
-Write-Host "  .\scripts\stop.ps1         # Stop services"
-Write-Host "  .\scripts\restart.ps1      # Restart services"
-Write-Host "  .\scripts\uninstall.ps1    # Remove everything"
+Write-Host "  pwsh -ExecutionPolicy Bypass .\logs.ps1         # View logs"
+Write-Host "  pwsh -ExecutionPolicy Bypass .\stop.ps1         # Stop services"
+Write-Host "  pwsh -ExecutionPolicy Bypass .\restart.ps1      # Restart services"
+Write-Host "  pwsh -ExecutionPolicy Bypass .\uninstall.ps1    # Remove everything"
 Write-Host ""
