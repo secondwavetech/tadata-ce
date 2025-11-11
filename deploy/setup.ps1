@@ -67,8 +67,19 @@ function Invoke-DockerCompose {
         exit 1
     }
 
-    $prefix = if ($composeCmd.Length -gt 1) { $composeCmd[1..($composeCmd.Length-1)] } else { @() }
-    & $composeCmd[0] @prefix @Arguments
+    # Build the complete command array
+    $cmdArray = @()
+    foreach ($cmd in $composeCmd) {
+        $cmdArray += $cmd
+    }
+    foreach ($arg in $Arguments) {
+        $cmdArray += $arg
+    }
+
+    # Invoke with proper error handling
+    $cmd = $cmdArray[0]
+    $params = $cmdArray[1..($cmdArray.Length-1)]
+    & $cmd $params
 }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -211,7 +222,17 @@ Write-Host ""
 Write-Color "[4/5] Database configuration..." "Cyan"
 
 $envVars = Get-Content "$scriptDir\.env" | Where-Object { $_ -match '^DATA_DIR=' }
-$dataDir = ($envVars -split '=', 2)[1]
+if ($envVars) {
+    $dataDir = ($envVars -split '=', 2)[1].Trim()
+} else {
+    $dataDir = ""
+}
+
+if ([string]::IsNullOrWhiteSpace($dataDir)) {
+    Write-Color "✗ DATA_DIR not configured in .env file" "Red"
+    Write-Host "Please check the .env file and ensure DATA_DIR is set"
+    exit 1
+}
 
 $postgresPath = Join-Path $dataDir "postgres"
 if ((Test-Path $postgresPath) -and ((Get-ChildItem $postgresPath -ErrorAction SilentlyContinue).Count -gt 0)) {
