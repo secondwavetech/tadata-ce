@@ -5,7 +5,7 @@ param(
     [string]$InstallDir = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 # Colors for output
 function Write-Color {

@@ -6,7 +6,7 @@ param(
     [string]$Version = "latest"
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 # Colors for output
 function Write-Color {

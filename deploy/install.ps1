@@ -7,7 +7,7 @@ param(
     [string]$InstallDir = ""
 )
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 # Colors for output
 function Write-Color {
@@ -88,10 +88,19 @@ if (-not (Test-Path $InstallDir)) {
 # Clone to a temporary directory, then copy only the deploy assets
 Write-Color "Downloading tadata.ai..." "Cyan"
 $tempDir = Join-Path $env:TEMP ("tadata-temp-" + [System.Guid]::NewGuid().ToString())
-git clone $REPO_URL $tempDir *>&1 | Out-Null
-Copy-Item -Path (Join-Path $tempDir "deploy\*") -Destination $InstallDir -Recurse -Force
-Remove-Item -Recurse -Force $tempDir
-Write-Color "✓ Downloaded" "Green"
+try {
+    git clone --quiet $REPO_URL $tempDir 2>&1 | Out-Null
+    Copy-Item -Path (Join-Path $tempDir "deploy\*") -Destination $InstallDir -Recurse -Force
+    Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+    Write-Color "✓ Downloaded" "Green"
+} catch {
+    Write-Color "✗ Failed to download from repository" "Red"
+    Write-Host $_.Exception.Message
+    if (Test-Path $tempDir) {
+        Remove-Item -Recurse -Force $tempDir -ErrorAction SilentlyContinue
+    }
+    exit 1
+}
 Write-Host ""
 
 # Change to installation directory
