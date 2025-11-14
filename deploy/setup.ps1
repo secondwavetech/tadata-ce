@@ -257,13 +257,14 @@ Write-Host ""
 # [5/5] Start services
 Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
-Write-Color "Pulling Docker images..." "Cyan"
-Invoke-DockerCompose -f docker-compose.yml pull
-Write-Host ""
-Write-Color "Starting containers..." "Cyan"
-Invoke-DockerCompose -f docker-compose.yml up -d
 
-Write-Color "Monitoring server startup..." "Cyan"
+Write-Color "Pulling Docker images (this may take a few minutes)..." "Cyan"
+Invoke-DockerCompose -f docker-compose.yml pull 2>&1 | Out-Null
+
+Write-Color "Starting containers..." "Cyan"
+Invoke-DockerCompose -f docker-compose.yml up -d 2>&1 | Out-Null
+
+Write-Color "Waiting for services to be ready..." "Cyan"
 $maxWait = 90
 $elapsed = 0
 $success = $false
@@ -288,10 +289,11 @@ Pop-Location
 
 Write-Host ""
 if ($success) {
-    Write-Color "Installation Complete! 🎉" "Green"
+    Write-Color "Installation Complete!" "Green"
 } else {
     Write-Color "Services started, but health checks may still be initializing." "Yellow"
 }
+Write-Host ""
 
 # Create convenience wrapper scripts in root directory
 $wrapperScripts = @{
@@ -318,22 +320,13 @@ foreach ($wrapper in $wrapperScripts.GetEnumerator()) {
 $envVars = Get-Content "$scriptDir\.env" | Where-Object { $_ -match '^CLIENT_PORT=' }
 $clientPort = if ($envVars) { ($envVars -split '=', 2)[1] } else { "3000" }
 
-Write-Host ""
 Write-Color "Access tadata.ai at: " "White" -NoNewline
 Write-Color "http://localhost:$clientPort" "Cyan"
 Write-Host ""
-Write-Color "Next Steps:" "Yellow"
-Write-Host "  1. Sign up for your account (first user)"
-Write-Host "  2. After login, configure your AI settings:"
-Write-Host "     • Go to Organization Settings → System LLM tab"
-Write-Host "     • Select your LLM service (Claude, OpenAI, Gemini, or AWS Bedrock)"
-Write-Host "     • Enter your API key"
-Write-Host "     • Save configuration"
-Write-Host ""
-Write-Host "Useful commands:"
-Write-Host "  pwsh -ExecutionPolicy Bypass .\logs.ps1         # View logs"
-Write-Host "  pwsh -ExecutionPolicy Bypass .\stop.ps1         # Stop services"
-Write-Host "  pwsh -ExecutionPolicy Bypass .\restart.ps1      # Restart services"
-Write-Host "  pwsh -ExecutionPolicy Bypass .\upgrade.ps1      # Upgrade to latest version"
-Write-Host "  pwsh -ExecutionPolicy Bypass .\uninstall.ps1    # Remove everything"
+Write-Color "Management commands:" "Cyan"
+Write-Host "  pwsh .\logs.ps1       # View logs"
+Write-Host "  pwsh .\stop.ps1       # Stop services"
+Write-Host "  pwsh .\restart.ps1    # Restart services"
+Write-Host "  pwsh .\upgrade.ps1    # Upgrade to latest"
+Write-Host "  pwsh .\uninstall.ps1  # Uninstall"
 Write-Host ""
