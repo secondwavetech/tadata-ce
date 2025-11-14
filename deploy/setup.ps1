@@ -257,9 +257,11 @@ Write-Host ""
 # [5/5] Start services
 Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
-Invoke-DockerCompose -f docker-compose.yml pull 2>&1 | Out-Null
+Write-Color "Pulling Docker images..." "Cyan"
+Invoke-DockerCompose -f docker-compose.yml pull
+Write-Host ""
 Write-Color "Starting containers..." "Cyan"
-Invoke-DockerCompose -f docker-compose.yml up -d 2>&1 | Out-Null
+Invoke-DockerCompose -f docker-compose.yml up -d
 
 Write-Color "Monitoring server startup..." "Cyan"
 $maxWait = 90
