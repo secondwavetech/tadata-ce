@@ -242,7 +242,7 @@ if ((Test-Path $postgresPath) -and ((Get-ChildItem $postgresPath -ErrorAction Si
     $dbChoice = Read-Host "Remove existing database for a clean install? (y/N)"
     if ($dbChoice -match '^[Yy]$') {
         Write-Color "Removing existing database..." "Yellow"
-        Invoke-DockerCompose -f "$scriptDir\docker-compose.yml" down 2>$null
+        Invoke-DockerCompose -f docker-compose.yml down 2>$null
         Remove-Item -Recurse -Force $postgresPath -ErrorAction SilentlyContinue
         Write-Color "✓ Database removed" "Green"
     } else {
@@ -257,9 +257,9 @@ Write-Host ""
 # [5/5] Start services
 Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
-Invoke-DockerCompose pull 2>&1 | Out-Null
+Invoke-DockerCompose -f docker-compose.yml pull 2>&1 | Out-Null
 Write-Color "Starting containers..." "Cyan"
-Invoke-DockerCompose up -d 2>&1 | Out-Null
+Invoke-DockerCompose -f docker-compose.yml up -d 2>&1 | Out-Null
 
 Write-Color "Monitoring server startup..." "Cyan"
 $maxWait = 90
@@ -267,14 +267,20 @@ $elapsed = 0
 $success = $false
 
 while ($elapsed -lt $maxWait) {
-    $status = Invoke-DockerCompose ps server 2>$null | Select-String -Pattern "healthy|Up"
-    if ($status) {
-        $success = $true
-        break
+    try {
+        $composeOutput = Invoke-DockerCompose -f docker-compose.yml ps server 2>&1 | Out-String
+        if ($composeOutput -match "healthy|Up") {
+            $success = $true
+            break
+        }
+    } catch {
+        # Ignore errors during health check
     }
     Start-Sleep -Seconds 3
     $elapsed += 3
+    Write-Host "." -NoNewline
 }
+Write-Host ""
 
 Pop-Location
 
