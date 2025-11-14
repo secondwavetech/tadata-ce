@@ -259,7 +259,7 @@ Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
 
 Write-Color "Pulling Docker images (this may take a few minutes)..." "Cyan"
-Invoke-DockerCompose -f docker-compose.yml pull 2>&1 | Out-Null
+Invoke-DockerCompose -f docker-compose.yml pull --quiet
 
 Write-Color "Starting containers..." "Cyan"
 Invoke-DockerCompose -f docker-compose.yml up -d 2>&1 | Out-Null
