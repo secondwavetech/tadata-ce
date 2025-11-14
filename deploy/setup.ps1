@@ -258,18 +258,41 @@ Write-Host ""
 Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
 
-Write-Color "Pulling Docker images (this may take a few minutes)..." "Cyan"
-Invoke-DockerCompose -f docker-compose.yml pull --quiet
+Write-Color "Pulling Docker images..." "Cyan"
+Invoke-DockerCompose -f docker-compose.yml pull --quiet 2>&1 | Out-Null
 
 Write-Color "Starting containers..." "Cyan"
-Invoke-DockerCompose -f docker-compose.yml up -d 2>&1 | Out-Null
+$startTime = Get-Date
+$spinChars = @('|', '/', '-', '\')
+$spinIndex = 0
 
-Write-Color "Waiting for services to be ready..." "Cyan"
+# Start containers in background-like manner
+$upJob = Start-Job -ScriptBlock {
+    param($scriptDir)
+    Set-Location $scriptDir
+    & docker compose -f docker-compose.yml up -d 2>&1 | Out-Null
+} -ArgumentList $scriptDir
+
+# Show spinner while containers start
+while ($upJob.State -eq 'Running') {
+    $elapsed = [math]::Floor(((Get-Date) - $startTime).TotalSeconds)
+    Write-Host "`r  $($spinChars[$spinIndex]) Starting... ${elapsed}s" -NoNewline
+    $spinIndex = ($spinIndex + 1) % 4
+    Start-Sleep -Milliseconds 250
+}
+
+# Clean up job
+$null = Receive-Job -Job $upJob
+Remove-Job -Job $upJob
+Write-Host "`r  ✓ Containers started                    "
+
+Write-Color "Waiting for services to become healthy..." "Cyan"
 $maxWait = 90
-$elapsed = 0
+$healthStartTime = Get-Date
 $success = $false
+$spinIndex = 0
 
-while ($elapsed -lt $maxWait) {
+while (((Get-Date) - $healthStartTime).TotalSeconds -lt $maxWait) {
     try {
         $composeOutput = Invoke-DockerCompose -f docker-compose.yml ps server 2>&1 | Out-String
         if ($composeOutput -match "healthy|Up") {
@@ -279,11 +302,18 @@ while ($elapsed -lt $maxWait) {
     } catch {
         # Ignore errors during health check
     }
-    Start-Sleep -Seconds 3
-    $elapsed += 3
-    Write-Host "." -NoNewline
+
+    $elapsed = [math]::Floor(((Get-Date) - $healthStartTime).TotalSeconds)
+    Write-Host "`r  $($spinChars[$spinIndex]) Checking health... ${elapsed}s" -NoNewline
+    $spinIndex = ($spinIndex + 1) % 4
+    Start-Sleep -Milliseconds 750
 }
-Write-Host ""
+
+if ($success) {
+    Write-Host "`r  ✓ Services are healthy                    "
+} else {
+    Write-Host "`r  ⚠ Health check timeout                    "
+}
 
 Pop-Location
 
