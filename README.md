@@ -206,7 +206,18 @@ tar czf tadata-backup-$(date +%Y%m%d).tar.gz "$DATA_DIR"
 
 ## License
 
-[License information to be added]
+Tadata Community Edition is licensed under the **Tadata Personal License (TPL) v1.1**.
+
+You are free to use this software for:
+- Personal projects
+- Education and learning
+- Internal evaluation and testing
+
+Commercial use, production deployments, and multi-user hosting require a **Tadata Commercial Subscription Agreement (TCSA)**.
+
+For commercial licensing inquiries, contact: **licensing@secondwavetech.com**
+
+See [LICENSE](LICENSE) for full terms.
 
 ## Contributing
 

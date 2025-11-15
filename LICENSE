@@ -1,0 +1,62 @@
+Tadata Personal License (TPL)
+
+Version 1.1 — October 2025
+© 2025 Second Wave Technologies LLC. All rights reserved.
+
+⸻
+
+1. Purpose
+
+This license lets individuals freely run and explore Tadata Community Edition ("the Software") for personal, educational, and internal evaluation use.
+The Software is distributed as pre-built images and executables, not source code.
+We want developers and power users to experience the full platform locally while keeping commercial rights and code IP protected.
+
+⸻
+
+2. You Can
+	•	Download and run the official Tadata Community Edition images provided by Second Wave Technologies LLC.
+	•	Use the Software for personal projects, education, or internal testing.
+	•	Configure and extend it using public APIs, plugins, and integrations.
+	•	Share unmodified copies of the official images for free (e.g., mirror or redistribute them privately).
+
+⸻
+
+3. You Cannot
+
+Without a Tadata Commercial Subscription Agreement (TCSA), you may not:
+	•	Offer the Software as a hosted, managed, or commercial service (including SaaS).
+	•	Use it for commercial production workloads or within any product or service that earns revenue.
+	•	Decompile, reverse-engineer, or modify the distributed binaries or images.
+	•	Distribute modified or repackaged versions of the Software.
+	•	Remove or alter licensing, telemetry, or edition-control code.
+	•	Use the Software in any way that competes with Tadata.ai or Second Wave Technologies LLC products.
+
+⸻
+
+4. Attribution
+
+If you showcase or publish work built with Tadata Community Edition, please credit:
+
+"Built with Tadata Community Edition — © 2025 Second Wave Technologies LLC"
+
+⸻
+
+5. No Warranty
+
+The Software is provided "as is" without any warranty, express or implied, including merchantability, fitness for a particular purpose, or non-infringement.
+Second Wave Technologies LLC assumes no liability for damages arising from its use.
+
+⸻
+
+6. Termination
+
+This license terminates automatically if you violate any term.
+Upon termination, you must stop using and distributing the Software.
+
+⸻
+
+7. Commercial Use
+
+For commercial, multi-user, or production deployment, please contact:
+
+📧 licensing@secondwavetech.com
