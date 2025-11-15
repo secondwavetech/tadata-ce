@@ -67,8 +67,19 @@ function Invoke-DockerCompose {
         exit 1
     }
 
-    $prefix = if ($composeCmd.Length -gt 1) { $composeCmd[1..($composeCmd.Length-1)] } else { @() }
-    & $composeCmd[0] @prefix @Arguments
+    # Build the complete command array
+    $cmdArray = @()
+    foreach ($cmd in $composeCmd) {
+        $cmdArray += $cmd
+    }
+    foreach ($arg in $Arguments) {
+        $cmdArray += $arg
+    }
+
+    # Invoke with proper error handling
+    $cmd = $cmdArray[0]
+    $params = $cmdArray[1..($cmdArray.Length-1)]
+    & $cmd $params
 }
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -186,7 +197,9 @@ if (-not (Test-Path "$scriptDir\.env")) {
 
     # Replace values
     $envContent = $envContent -replace 'CLIENT_PORT=3000', "CLIENT_PORT=$clientPort"
-    $envContent = $envContent -replace '^DATA_DIR=.*', "DATA_DIR=$dataDir"
+    # Use multiline mode (?m) and escape the path for Windows backslashes
+    $escapedDataDir = [regex]::Escape($dataDir)
+    $envContent = $envContent -replace '(?m)^DATA_DIR=.*$', "DATA_DIR=$dataDir"
     $envContent = $envContent -replace 'CLIENT_IMAGE_TAG=latest', "CLIENT_IMAGE_TAG=$Version"
     $envContent = $envContent -replace 'SERVER_IMAGE_TAG=latest', "SERVER_IMAGE_TAG=$Version"
     $envContent = $envContent -replace 'FAAS_IMAGE_TAG=latest', "FAAS_IMAGE_TAG=$Version"
@@ -211,7 +224,17 @@ Write-Host ""
 Write-Color "[4/5] Database configuration..." "Cyan"
 
 $envVars = Get-Content "$scriptDir\.env" | Where-Object { $_ -match '^DATA_DIR=' }
-$dataDir = ($envVars -split '=', 2)[1]
+if ($envVars) {
+    $dataDir = ($envVars -split '=', 2)[1].Trim()
+} else {
+    $dataDir = ""
+}
+
+if ([string]::IsNullOrWhiteSpace($dataDir)) {
+    Write-Color "✗ DATA_DIR not configured in .env file" "Red"
+    Write-Host "Please check the .env file and ensure DATA_DIR is set"
+    exit 1
+}
 
 $postgresPath = Join-Path $dataDir "postgres"
 if ((Test-Path $postgresPath) -and ((Get-ChildItem $postgresPath -ErrorAction SilentlyContinue).Count -gt 0)) {
@@ -219,7 +242,7 @@ if ((Test-Path $postgresPath) -and ((Get-ChildItem $postgresPath -ErrorAction Si
     $dbChoice = Read-Host "Remove existing database for a clean install? (y/N)"
     if ($dbChoice -match '^[Yy]$') {
         Write-Color "Removing existing database..." "Yellow"
-        Invoke-DockerCompose -f "$scriptDir\docker-compose.yml" down 2>$null
+        Invoke-DockerCompose -f docker-compose.yml down 2>$null
         Remove-Item -Recurse -Force $postgresPath -ErrorAction SilentlyContinue
         Write-Color "✓ Database removed" "Green"
     } else {
@@ -234,53 +257,106 @@ Write-Host ""
 # [5/5] Start services
 Write-Color "[5/5] Starting services..." "Cyan"
 Push-Location $scriptDir
-Invoke-DockerCompose pull 2>$null
+
+Write-Color "Pulling Docker images..." "Cyan"
+Invoke-DockerCompose -f docker-compose.yml pull --quiet 2>&1 | Out-Null
+
 Write-Color "Starting containers..." "Cyan"
-Invoke-DockerCompose up -d
+$startTime = Get-Date
+$spinChars = @('|', '/', '-', '\')
+$spinIndex = 0
 
-Write-Color "Monitoring server startup..." "Cyan"
+# Start containers in background-like manner
+$upJob = Start-Job -ScriptBlock {
+    param($scriptDir)
+    Set-Location $scriptDir
+    & docker compose -f docker-compose.yml up -d 2>&1 | Out-Null
+} -ArgumentList $scriptDir
+
+# Show spinner while containers start
+while ($upJob.State -eq 'Running') {
+    $elapsed = [math]::Floor(((Get-Date) - $startTime).TotalSeconds)
+    Write-Host "`r  $($spinChars[$spinIndex]) Starting... ${elapsed}s" -NoNewline
+    $spinIndex = ($spinIndex + 1) % 4
+    Start-Sleep -Milliseconds 250
+}
+
+# Clean up job
+$null = Receive-Job -Job $upJob
+Remove-Job -Job $upJob
+Write-Host "`r  ✓ Containers started                    "
+
+Write-Color "Waiting for services to become healthy..." "Cyan"
 $maxWait = 90
-$elapsed = 0
+$healthStartTime = Get-Date
 $success = $false
+$spinIndex = 0
 
-while ($elapsed -lt $maxWait) {
-    $status = Invoke-DockerCompose ps server 2>$null | Select-String -Pattern "healthy|Up"
-    if ($status) {
-        $success = $true
-        break
+while (((Get-Date) - $healthStartTime).TotalSeconds -lt $maxWait) {
+    try {
+        $composeOutput = Invoke-DockerCompose -f docker-compose.yml ps server 2>&1 | Out-String
+        if ($composeOutput -match "healthy|Up") {
+            $success = $true
+            break
+        }
+    } catch {
+        # Ignore errors during health check
     }
-    Start-Sleep -Seconds 3
-    $elapsed += 3
+
+    $elapsed = [math]::Floor(((Get-Date) - $healthStartTime).TotalSeconds)
+    Write-Host "`r  $($spinChars[$spinIndex]) Checking health... ${elapsed}s" -NoNewline
+    $spinIndex = ($spinIndex + 1) % 4
+    Start-Sleep -Milliseconds 750
+}
+
+if ($success) {
+    Write-Host "`r  ✓ Services are healthy                    "
+} else {
+    Write-Host "`r  ⚠ Health check timeout                    "
 }
 
 Pop-Location
 
 Write-Host ""
 if ($success) {
-    Write-Color "Installation Complete! 🎉" "Green"
+    Write-Color "Installation Complete!" "Green"
 } else {
     Write-Color "Services started, but health checks may still be initializing." "Yellow"
+}
+Write-Host ""
+
+# Create convenience wrapper scripts in root directory
+$wrapperScripts = @{
+    "logs.ps1" = "scripts\logs.ps1"
+    "restart.ps1" = "scripts\restart.ps1"
+    "stop.ps1" = "scripts\stop.ps1"
+    "upgrade.ps1" = "scripts\upgrade.ps1"
+    "uninstall.ps1" = "scripts\uninstall.ps1"
+}
+
+foreach ($wrapper in $wrapperScripts.GetEnumerator()) {
+    $wrapperPath = Join-Path $scriptDir $wrapper.Key
+    $targetScript = $wrapper.Value
+    $wrapperContent = @"
+#!/usr/bin/env pwsh
+# Convenience wrapper for $targetScript
+`$scriptDir = Split-Path -Parent `$MyInvocation.MyCommand.Path
+& "`$scriptDir\$targetScript" @args
+"@
+    Set-Content -Path $wrapperPath -Value $wrapperContent -NoNewline
 }
 
 # Show next steps
 $envVars = Get-Content "$scriptDir\.env" | Where-Object { $_ -match '^CLIENT_PORT=' }
 $clientPort = if ($envVars) { ($envVars -split '=', 2)[1] } else { "3000" }
 
-Write-Host ""
 Write-Color "Access tadata.ai at: " "White" -NoNewline
 Write-Color "http://localhost:$clientPort" "Cyan"
 Write-Host ""
-Write-Color "Next Steps:" "Yellow"
-Write-Host "  1. Sign up for your account (first user)"
-Write-Host "  2. After login, configure your AI settings:"
-Write-Host "     • Go to Organization Settings → System LLM tab"
-Write-Host "     • Select your LLM service (Claude, OpenAI, Gemini, or AWS Bedrock)"
-Write-Host "     • Enter your API key"
-Write-Host "     • Save configuration"
-Write-Host ""
-Write-Host "Useful commands:"
-Write-Host "  .\scripts\logs.ps1         # View logs"
-Write-Host "  .\scripts\stop.ps1         # Stop services"
-Write-Host "  .\scripts\restart.ps1      # Restart services"
-Write-Host "  .\scripts\uninstall.ps1    # Remove everything"
+Write-Color "Management commands:" "Cyan"
+Write-Host "  pwsh .\logs.ps1       # View logs"
+Write-Host "  pwsh .\stop.ps1       # Stop services"
+Write-Host "  pwsh .\restart.ps1    # Restart services"
+Write-Host "  pwsh .\upgrade.ps1    # Upgrade to latest"
+Write-Host "  pwsh .\uninstall.ps1  # Uninstall"
 Write-Host ""

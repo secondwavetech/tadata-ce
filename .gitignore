@@ -31,3 +31,5 @@ tmp/
 temp/
 
 .history/
+
+.claude/
