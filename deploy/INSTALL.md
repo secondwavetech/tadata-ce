@@ -463,6 +463,30 @@ rm -rf "$DATA_DIR/postgres"
 docker-compose up -d
 ```
 
+### Forgot Password
+
+If you forget your login password, use the password reset scripts:
+
+**Linux / macOS:**
+
+```bash
+cd ~/tadata-ce/deploy
+./reset-password.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+cd ~/tadata-ce/deploy
+.\reset-password.ps1
+```
+
+The script will prompt for:
+1. Email address of the user
+2. New password (minimum 8 characters)
+
+See [PASSWORD_RESET.md](PASSWORD_RESET.md) for detailed instructions and troubleshooting.
+
 ### Memory or Performance Issues
 
 **Check Docker resource usage:**

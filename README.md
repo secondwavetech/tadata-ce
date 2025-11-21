@@ -191,6 +191,29 @@ source .env
 tar czf tadata-backup-$(date +%Y%m%d).tar.gz "$DATA_DIR"
 ```
 
+## Password Reset
+
+If you forget your password, use the provided password reset scripts:
+
+**Linux / macOS:**
+```bash
+cd tadata-ce/deploy
+./reset-password.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+cd tadata-ce\deploy
+.\reset-password.ps1
+```
+
+The scripts will:
+1. Prompt for the user's email address
+2. Prompt for a new password
+3. Securely hash and update the password in the database
+
+See [deploy/PASSWORD_RESET.md](deploy/PASSWORD_RESET.md) for detailed instructions and troubleshooting.
+
 ## Security
 
 - All secrets are generated locally using cryptographically secure methods
